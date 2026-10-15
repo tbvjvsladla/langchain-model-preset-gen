@@ -1,0 +1,14 @@
+# 모델 규칙 1건 — 작성법은 model_rules/README.md
+match: glm-5.2
+provider_class: openai_compatible
+injection: xb_thinking_effort
+mapping:
+  none: {action: disable}
+  low: {action: set, value: high}
+  medium: {action: set, value: high}
+  high: {action: set, value: high}
+  xhigh: {action: set, value: xhigh}
+  max: {action: set, value: max}
+end_marker: null
+sampling: {temperature: accepted, top_p: accepted, top_k: rejected}
+basis: 'api.z.ai: reasoning_effort high·xhigh·max(이전 조사 glm, 2026-07-13 조사) → low·medium=high; 끄기 thinking.type disabled 는 미실측'

@@ -1,0 +1,7 @@
+# preset — JUDGE (평가 판정자). 판정이 흔들리지 않도록 temperature 0.0만 보내고 추론은 높게 둔다.
+#   긴 추론과 긴 판정문을 위해 timeout 300초·max_tokens 32768.
+name: JUDGE
+intent: balanced
+sampling: {temperature: 0.0, top_p: null, top_k: null}
+effort: high
+limits: {timeout_seconds: 300, max_retries: 2, response_deadline_seconds: null, max_tokens: 32768}

@@ -1,0 +1,56 @@
+# langchain-model-preset-gen — 임베딩 모델 사실표 (배포자 소유)
+# 매칭: provider_class 가 같고 model_name.lower().startswith(match) 인 항목 중 match 가 가장 긴 것 (model_rules 와 같은 규칙).
+# normalization 은 이 표에 없다 — 실측(preflight runnable)의 raw 노름에서 파생해 프로필에 기록한다.
+# input_modalities 는 현행 LangChain 어댑터로 실제 전달할 수 있는 modality 만 적는다.
+# prefix_template 은 구조 템플릿(모델 사실)이다. {task} 지시 텍스트는 사용하는 workflow 가 소유한다.
+capabilities:
+  - match: "qwen/qwen3-embedding-8b"     # Qwen3 카드: query 에 Instruct 프리픽스, 문서는 원문
+    provider_class: openai_compatible
+    query_mode_surface: instruct_prefix
+    prefix_template: "Instruct: {task}\nQuery:{query}"
+    task_text_injectable: true
+    native_dimensions: 4096
+    input_modalities: [text]
+  - match: "qwen/qwen3-embedding-4b"
+    provider_class: openai_compatible
+    query_mode_surface: instruct_prefix
+    prefix_template: "Instruct: {task}\nQuery:{query}"
+    task_text_injectable: true
+    native_dimensions: 2560
+    input_modalities: [text]
+  - match: "perplexity/pplx-embed-v1-4b" # 벤더가 prefix 불필요 명시, 출력 비정규화(실측)
+    provider_class: openai_compatible
+    query_mode_surface: none
+    prefix_template: null
+    task_text_injectable: false
+    native_dimensions: 2560
+    input_modalities: [text]
+  - match: "perplexity/pplx-embed-v1-0.6b"
+    provider_class: openai_compatible
+    query_mode_surface: none
+    prefix_template: null
+    task_text_injectable: false
+    native_dimensions: 1024
+    input_modalities: [text]
+  - match: "gemini-embedding-2"          # task_type 은 이 모델에서 무효(실측 cos 1.000000) → 공식 텍스트 형식을 양측에
+    provider_class: google               #   (https://ai.google.dev/gemini-api/docs/embeddings). 검색 A/B 246문항:
+    query_mode_surface: task_title_prefix  # Instruct+원문 0.744 → 공식 형식 0.805.
+    prefix_template: "task: question answering | query: {query}"   # task 라벨 = 모델 고정 어휘(지시문 주입 ✕)
+    document_template: "title: none | text: {text}"
+    task_text_injectable: false
+    native_dimensions: 3072
+    input_modalities: [text]
+  - match: "gemini-embedding-001"        # SDK task_type=RETRIEVAL_QUERY/DOCUMENT (텍스트 주입 불가)
+    provider_class: google
+    query_mode_surface: task_type_param
+    prefix_template: null
+    task_text_injectable: false
+    native_dimensions: 3072
+    input_modalities: [text]
+  - match: "text-embedding-3-large"      # 대칭 — query/document 구분 없음
+    provider_class: openai
+    query_mode_surface: none
+    prefix_template: null
+    task_text_injectable: false
+    native_dimensions: 3072
+    input_modalities: [text]

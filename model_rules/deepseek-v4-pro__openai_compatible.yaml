@@ -1,0 +1,19 @@
+# 모델 규칙 1건 — 작성법은 model_rules/README.md
+match: deepseek-v4-pro
+provider_class: openai_compatible
+injection: xb_thinking_effort
+mapping:
+  none: {action: disable}
+  low: {action: set, value: high}
+  medium: {action: set, value: high}
+  high: {action: set, value: high}
+  xhigh: {action: set, value: max}
+  max: {action: set, value: max}
+end_marker: null
+sampling:
+  temperature:
+    by_effort: {none: accepted, default: ignored}
+  top_p:
+    by_effort: {none: accepted, default: ignored}
+  top_k: rejected
+basis: deepseek-v4-flash 와 같은 API 계약(이전 조사 deepseek 광역 규칙) — reasoning_effort high·max, 사고 모드는 샘플링 무시

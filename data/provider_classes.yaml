@@ -1,0 +1,143 @@
+# langchain-model-preset-gen — provider_class 표 (배포자 소유)
+#
+#   native_base_url : 프로필 base_url 이 null 일 때 쓰는 벤더 기본 endpoint.
+#                     openai_compatible 은 null — 프로필 base_url 이 반드시 있어야 한다.
+#   langchain_dist  : 이 class 의 LangChain 통합 패키지. probe.measured_with = "<dist>==<설치본>".
+#   requires_range  : 검증한 dist 의 major 구간(PEP 440). 설치본이 구간 밖이면 발행·임베딩 실측 기록이 ValueError.
+#   http            : 원문 HTTP 형식 (LangChain 을 거치지 않는 실측 그래프·v1·v3 용).
+#     auth          : bearer → "Authorization: Bearer <key>" (key 없음 = 헤더 없음, 무인증 자체 호스팅)
+#                     x_api_key → "x-api-key: <key>" / x_goog_api_key → "x-goog-api-key: <key>" (URL·로그에 키가 남지 않는다)
+#     models_*      : 모델 목록 요청과 id 추출. chat_path·embed_path 의 {model} 은 model_name.
+#     api           : 본문 골격 — chat_completions(OpenAI) · messages(Anthropic) · generate_content(Gemini).
+#                     chat_completions 는 SDK 인자의 extra_body.* 를 본문 최상위로 올리고 나머지는 이름 그대로 둔다.
+#     body_paths    : (messages·generate_content) SDK 인자 이름 → 본문 경로. 표에 없는 인자는 KeyError(주입 방식 불일치).
+#     max_tokens_path : 출력 상한을 싣는 본문 경로.
+#   sdk             : LangChain 생성자 대응표 (resolver 가 쓴다).
+#     chat_class / embedding_class : "모듈:클래스".
+#     api_key_kwarg / base_url_kwarg : 키·endpoint 생성자 인자 (base_url_kwarg null = native, 넘기지 않음).
+#     kwarg_paths   : 프로필 키(limits·sampling) → 생성자 인자 경로. openai 계열 top_k 는 스키마 밖 → extra_body.top_k.
+#     embedding_kwarg_paths   : 임베딩 프로필 키(limits·dimensions) → 생성자 인자 경로.
+#     embedding_fixed_kwargs  : 임베딩 생성자에 항상 싣는 인자.
+#     embedding_unsupported_kwargs : 임베딩 SDK 에 없는 프로필 키 — 발행 시 overridable 에서 빠진다(효과 없는 knob 방지).
+#
+# 근거 문서
+#   OpenAI    https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create
+#   Anthropic https://platform.claude.com/docs/en/build-with-claude/extended-thinking (POST /v1/messages,
+#             anthropic-version 2023-06-01, effort = output_config.effort, 목록 기본 limit 20 → 1000 으로 요청)
+#   Google    https://ai.google.dev/api/generate-content (목록 기본 pageSize 50 → 1000 으로 요청)
+
+openai_compatible:
+  native_base_url: null
+  langchain_dist: langchain-openai
+  requires_range: ">=1.0,<2.0"
+  http:
+    auth: bearer
+    headers: {}
+    models_path: /models
+    models_query: {}
+    models_items: data
+    models_id: id
+    models_id_prefix: ""
+    chat_path: /chat/completions
+    embed_path: /embeddings
+    api: chat_completions
+    max_tokens_path: max_tokens          # vLLM·OpenRouter 등 호환 서버는 max_tokens 를 받는다
+  sdk:
+    chat_class: "langchain_openai:ChatOpenAI"
+    embedding_class: "langchain_openai:OpenAIEmbeddings"
+    api_key_kwarg: api_key
+    base_url_kwarg: base_url
+    kwarg_paths: {max_tokens: max_tokens, timeout_seconds: timeout, max_retries: max_retries,
+                  temperature: temperature, top_p: top_p, top_k: extra_body.top_k}
+    embedding_kwarg_paths: {dimensions: dimensions, timeout_seconds: timeout, max_retries: max_retries}
+    # 없으면 LangChain 이 문자열 대신 tiktoken 토큰 ID 배열을 보내 호환 서버가 거부한다(실측).
+    embedding_fixed_kwargs: {tiktoken_enabled: false, check_embedding_ctx_length: false}
+    embedding_unsupported_kwargs: []
+
+openai:
+  native_base_url: "https://api.openai.com/v1"
+  langchain_dist: langchain-openai
+  requires_range: ">=1.0,<2.0"
+  http:
+    auth: bearer
+    headers: {}
+    models_path: /models
+    models_query: {}
+    models_items: data
+    models_id: id
+    models_id_prefix: ""
+    chat_path: /chat/completions
+    embed_path: /embeddings
+    api: chat_completions
+    max_tokens_path: max_completion_tokens   # 추론 모델은 max_tokens 를 거부한다(OpenAI 문서)
+  sdk:
+    chat_class: "langchain_openai:ChatOpenAI"
+    embedding_class: "langchain_openai:OpenAIEmbeddings"
+    api_key_kwarg: api_key
+    base_url_kwarg: null
+    kwarg_paths: {max_tokens: max_tokens, timeout_seconds: timeout, max_retries: max_retries,
+                  temperature: temperature, top_p: top_p, top_k: extra_body.top_k}
+    embedding_kwarg_paths: {dimensions: dimensions, timeout_seconds: timeout, max_retries: max_retries}
+    embedding_fixed_kwargs: {}
+    embedding_unsupported_kwargs: []
+
+anthropic:
+  native_base_url: "https://api.anthropic.com/v1"
+  langchain_dist: langchain-anthropic
+  requires_range: ">=1.0,<2.0"
+  http:
+    auth: x_api_key
+    headers: {anthropic-version: "2023-06-01"}
+    models_path: /models
+    models_query: {limit: 1000}
+    models_items: data
+    models_id: id
+    models_id_prefix: ""
+    chat_path: /messages
+    api: messages
+    body_paths:
+      effort: output_config.effort
+      thinking: thinking
+      temperature: temperature
+      top_p: top_p
+      top_k: top_k
+    max_tokens_path: max_tokens
+  sdk:
+    chat_class: "langchain_anthropic:ChatAnthropic"
+    api_key_kwarg: api_key
+    base_url_kwarg: null
+    kwarg_paths: {max_tokens: max_tokens, timeout_seconds: timeout, max_retries: max_retries,
+                  temperature: temperature, top_p: top_p, top_k: top_k}
+    # 임베딩 API 없음 — embedding_class 가 없어 임베딩 프로필 해석은 KeyError.
+
+google:
+  native_base_url: "https://generativelanguage.googleapis.com/v1beta"
+  langchain_dist: langchain-google-genai
+  requires_range: ">=4.0,<5.0"
+  http:
+    auth: x_goog_api_key
+    headers: {}
+    models_path: /models
+    models_query: {pageSize: 1000}
+    models_items: models
+    models_id: name
+    models_id_prefix: "models/"
+    chat_path: "/models/{model}:generateContent"
+    embed_path: "/models/{model}:embedContent"
+    api: generate_content
+    body_paths:
+      thinking_level: generationConfig.thinkingConfig.thinkingLevel
+      temperature: generationConfig.temperature
+      top_p: generationConfig.topP
+      top_k: generationConfig.topK
+    max_tokens_path: generationConfig.maxOutputTokens
+  sdk:
+    chat_class: "langchain_google_genai:ChatGoogleGenerativeAI"
+    embedding_class: "langchain_google_genai:GoogleGenerativeAIEmbeddings"
+    api_key_kwarg: google_api_key
+    base_url_kwarg: null
+    kwarg_paths: {max_tokens: max_output_tokens, timeout_seconds: timeout, max_retries: max_retries,
+                  temperature: temperature, top_p: top_p, top_k: top_k}
+    embedding_kwarg_paths: {dimensions: output_dimensionality, timeout_seconds: request_options.timeout}
+    embedding_fixed_kwargs: {}
+    embedding_unsupported_kwargs: [max_retries]   # GoogleGenerativeAIEmbeddings 에 max_retries 필드가 없다

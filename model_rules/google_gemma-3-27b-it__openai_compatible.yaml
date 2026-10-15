@@ -1,0 +1,14 @@
+# 모델 규칙 1건 — 작성법은 model_rules/README.md
+match: google/gemma-3-27b-it
+provider_class: openai_compatible
+injection: none
+mapping:
+  none: {action: omit}
+  low: {action: omit}
+  medium: {action: omit}
+  high: {action: omit}
+  xhigh: {action: omit}
+  max: {action: omit}
+end_marker: null
+sampling: {temperature: accepted, top_p: accepted, top_k: accepted}
+basis: 비추론 모델 — OR 메타 reasoning 없음, sweep 1·2차 사고 0자·0토큰 → 6칸 omit

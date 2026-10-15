@@ -1,0 +1,14 @@
+# 모델 규칙 1건 — 작성법은 model_rules/README.md
+match: lfm2.5-2.6b
+provider_class: openai_compatible
+injection: none
+mapping:
+  none: {action: omit}
+  low: {action: omit}
+  medium: {action: omit}
+  high: {action: omit}
+  xhigh: {action: omit}
+  max: {action: omit}
+end_marker: </think>
+sampling: {temperature: accepted, top_p: accepted, top_k: accepted}
+basis: 항상 사고하는 추론 모델(카드), enable_thinking:false 는 템플릿이 무시해 사고가 content 로 샘(해로운 끄기) → 6칸 omit; top_k 는 sweep 상 엔드포인트가 무시하는 정황(별건 조사 중)

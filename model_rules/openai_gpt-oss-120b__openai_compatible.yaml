@@ -1,0 +1,14 @@
+# 모델 규칙 1건 — 작성법은 model_rules/README.md
+match: openai/gpt-oss-120b
+provider_class: openai_compatible
+injection: or_reasoning
+mapping:
+  none: {action: set, value: low}
+  low: {action: set, value: low}
+  medium: {action: set, value: medium}
+  high: {action: set, value: high}
+  xhigh: {action: set, value: high}
+  max: {action: set, value: high}
+end_marker: null
+sampling: {temperature: accepted, top_p: accepted, top_k: accepted}
+basis: OR 메타 mandatory true·efforts low·medium·high → none=low(최저), xhigh·max=high; ct_kwargs 주입은 무효였다(2026-07-28 실측)

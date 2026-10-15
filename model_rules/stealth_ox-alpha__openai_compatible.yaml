@@ -1,0 +1,14 @@
+# 모델 규칙 1건 — 작성법은 model_rules/README.md
+match: stealth/ox-alpha
+provider_class: openai_compatible
+injection: or_reasoning
+mapping:
+  none: {action: set, value: low}
+  low: {action: set, value: low}
+  medium: {action: set, value: high}
+  high: {action: set, value: high}
+  xhigh: {action: set, value: max}
+  max: {action: set, value: max}
+end_marker: null
+sampling: {temperature: accepted, top_p: accepted, top_k: accepted}
+basis: 2026-10-15 /models 목록에서 빠진 stealth 라우트 — 이전 조사(2026-08-25 조회) mandatory true·efforts max·high·low → none=low, medium=high, xhigh=max

@@ -1,0 +1,6 @@
+# preset — RAG (근거 문서 기반 답변). 검색 문서에 붙은 답을 내도록 샘플링을 낮게, 추론은 중간 강도.
+name: RAG
+intent: grounded
+sampling: {temperature: 0.1, top_p: 0.9, top_k: 20}
+effort: medium
+limits: {timeout_seconds: 120, max_retries: 2, response_deadline_seconds: null, max_tokens: 8192}

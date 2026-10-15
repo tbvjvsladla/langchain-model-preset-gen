@@ -1,0 +1,104 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# langchain-model-preset-gen 발행 — 프로필 형식 골격 (사람용 안내, 주석만 있는 파일)
+# 실제 프로필은 스킬이 발행한다 — 손으로 처음부터 쓰지 않는다 (프로젝트 루트에서, S = 스킬 폴더):
+#   python $S/scripts/publish.py --model-name <id> --preset <NAME> --provider <serving_provider> \
+#     --kind llm|embedding [--dimensions N] [--out-dir <폴더>] [--dry-run]
+# 위치 = configs/config.yaml profiles_dir (또는 --out-dir).
+# 파일명 = {model_name 정리값}_{preset}_{serving_provider}.yaml ([A-Za-z0-9._-] 밖 문자는 '_').
+# 같은 이름이 있으면 발행을 거부한다 — 재발행하려면 옛 파일을 먼저 지운다(손 편집은 사라진다).
+# 발행 뒤 실측 기록:
+#   python $S/scripts/preflight.py --profile <파일> --checks v1,v3,v4-1,pg,runnable --write-back   # LLM
+#   python $S/scripts/preflight.py --profile <파일> --checks v1,v3,v4-1,runnable --write-back      # 임베딩
+# 값의 출처(스킬 안): presets/<NAME>.yaml(preset 값) · model_rules/*.yaml(6칸·sampling 수용표) ·
+#   data/injection.yaml(주입 방식) · data/provider_classes.yaml(native endpoint·SDK 대응) ·
+#   data/providers.yaml(공식 serving_provider) · data/embedding_capability.yaml(임베딩 사실표) ·
+#   configs/config.yaml(사이트 serving_provider · overridable 키와 기본값).
+# ───────────────────────────────────────────────────────────────────────────
+# [serving_provider] → provider_class / base_url / api_key_env
+#   openai       → openai            / null(→ https://api.openai.com/v1)                       / OPENAI_API_KEY
+#   anthropic    → anthropic         / null(→ https://api.anthropic.com/v1)                    / ANTHROPIC_API_KEY
+#   google       → google            / null(→ https://generativelanguage.googleapis.com/v1beta) / GOOGLE_API_KEY
+#   openrouter   → openai_compatible / https://openrouter.ai/api/v1                            / OPENROUTER_API_KEY (model = vendor/slug)
+#   deepseek·zai·minimax·kimi → openai_compatible / 벤더 endpoint / 벤더 키
+#   사이트 이름(configs providers) → openai_compatible / http://<host>:8001/v1 / null (무인증 자체 호스팅)
+#   base_url 이 null 이면 실제 endpoint = data/provider_classes.yaml native_base_url.
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# ── (A) LLM 프로필 ──────────────────────────────────────────────────────────
+# 머리말 2줄(발행기가 쓴다):
+#   # langchain-model-preset-gen 발행 — 사용자 편집 가능. 재발행하려면 이 파일을 지운 뒤 다시 생성한다(같은 이름은 생성 거부).
+#   # preset 출처: <PRESET> (스킬 presets/, 발행일 <YYYY-MM-DD>) · 실측: <미측정 | probe_graph live YYYY-MM-DD>
+# kind: llm
+# model_name: "<엔드포인트 모델 목록의 id 그대로. openrouter = vendor/slug, Anthropic = 목록에 실린 dated id>"
+# serving_provider: <data/providers.yaml 또는 configs providers 이름>
+# provider_class: <openai | anthropic | google | openai_compatible>   # 잠금 — serving_provider 표에서 결정
+# base_url: <null | endpoint>                                          # 잠금
+# api_key_env: <ENV_VAR | null>                                        # 잠금 (null = 무인증 자체 호스팅)
+# preset: <presets/ 파일명 stem — 예 SQLGEN | RAG | BALANCED | CREATIVE | JUDGE>
+# # Agent override 가 받는 키 = 이 목록 (configs overridable 의 키 목록에서 옴). 목록에서 빼면 그 키는 잠긴다.
+# # 그 밖의 키(model_name·base_url·reasoning_effort·sampling·probe 등)는 항상 잠금.
+# overridable: [temperature, top_p, top_k, effort, timeout_seconds, max_retries, response_deadline_seconds, max_tokens]
+# # effort 축 — 6칸 전부 필수. 칸 = {action: set, value} | {action: disable} | {action: omit}
+# #   축약형 `low: low` = {action: set, value: low}. 실행 시점 effort 의 칸을 그대로 주입한다(가까운 칸으로 대체하지 않음).
+# #   set 의 value 는 data/injection.yaml 해당 방식의 values 키이거나 value_path 에 그대로 들어갈 값.
+# reasoning_effort:
+#   # injection = data/injection.yaml 키: or_reasoning | ct_enable_thinking | xb_thinking | xb_thinking_effort |
+#   #   openai_native | anthropic_effort | anthropic_adaptive_effort | anthropic_thinking_budget | gemini_level | none
+#   injection: "<data/injection.yaml 키>"
+#   mapping:
+#     none:   {action: disable}           # 끌 수 없으면 최저 단계 값 또는 {action: omit}
+#     low:    {action: set, value: <값>}
+#     medium: {action: set, value: <값>}
+#     high:   {action: set, value: <값>}
+#     xhigh:  {action: set, value: <값>}  # 단계가 적은 모델은 다대일 (예: xhigh·max → high)
+#     max:    {action: set, value: <값>}
+#   end_marker: <"</think>" | null>       # 사고 종료 표지 — 본문 누출 판정용 (null = 기본 표지 목록)
+#   basis: "<근거 한 줄: 모델카드·OpenRouter 메타·실측>"
+# # sampling 축 — 키별 accepted | rejected | ignored, 또는 effort 단계별 분기:
+# #   temperature: {by_effort: {none: accepted, default: ignored}}
+# # accepted 이고 값이 null 이 아닌 키만 요청에 싣는다. accepted 가 아닌 키의 override 는 해석기가 거부한다.
+# sampling: {temperature: <상태>, top_p: <상태>, top_k: <상태>}
+# # preset 값 (preset 위에 configs overridable 의 null 이 아닌 기본값을 얹은 결과). null = 보내지 않음.
+# preset_values: {temperature: <float|null>, top_p: <float|null>, top_k: <int|null>, effort: <none|low|medium|high|xhigh|max>}
+# # 4키 전부 필수. max_tokens·timeout_seconds·max_retries 는 SDK 인자로 간다.
+# #   response_deadline_seconds 는 SDK 인자가 아니다 — 소비자 처리부가 쓰는 응답 상한(null = 상한 없음).
+# #   anthropic_thinking_budget 이면 max_tokens > budget_tokens 여야 한다.
+# limits: {timeout_seconds: <int>, max_retries: <int>, response_deadline_seconds: <int|null>, max_tokens: <int>}
+# # 실측 기록 — preflight --write-back 이 쓴다. 손으로 쓰는 경우는 사용자가 '강행'을 결정한 status: forced 뿐이다.
+# probe:
+#   status: <ok | forced | probe_error>     # ok ⇔ 실측 그래프 종착 PASS AND 6 호출 방식 전부 ok
+#   method: <static | probe_graph_live>     # static = 발행 직후 미측정
+#   measured_at: <null | ISO8601>
+#   terminal: <null | PASS | T_* | U_undeterminable>   # 실측 그래프 종착 (data/probe_graph.yaml diagnoses)
+#   runnable: {invoke: <ok|unsupported|probe_error>, ainvoke: <…>, stream: <…>, astream: <…>, batch: <…>, abatch: <…>}
+#
+# ── (B) 임베딩 프로필 (예: preset RETRIEVAL) ───────────────────────────────
+# 머리말 2줄은 LLM 과 같다(실측 칸: 미측정 | live_v5 YYYY-MM-DD).
+# kind: embedding
+# model_name: "<API model id>"
+# serving_provider: <openai | google | openrouter | 사이트 이름 등>   # anthropic 은 임베딩 없음
+# provider_class: <openai | google | openai_compatible>
+# base_url: <null | endpoint>
+# api_key_env: <ENV_VAR | null>
+# preset: RETRIEVAL
+# overridable: [timeout_seconds, max_retries]    # 임베딩 SDK 가 받지 않는 키는 빠진다 (google: max_retries 없음)
+# dimensions: <null | int>        # MRL 절단 요청. null = 미주입(native 그대로). native 이상은 발행 거부
+# preset_values: {intent: <retrieval | similarity | classification | clustering>, modality: <text | image>}
+# limits: {timeout_seconds: <int>, max_retries: <int>}   # response_deadline_seconds·max_tokens 없음
+# supports:                       # data/embedding_capability.yaml 에서 펼침 (손으로 쓰지 않음)
+#   query_mode_surface: <none | instruct_prefix | task_type_param | task_title_prefix>
+#   prefix_template: <null | "…{query}">          # instruct_prefix 는 {task} 도 있음 → load_embeddings(query_instruction=...)
+#   task_text_injectable: <true | false>
+#   normalization: <null | builtin | required>    # 실측 노름에서 파생 (≈1.0 → builtin) — write-back 이 채운다
+#   native_dimensions: <int>
+#   input_modalities: [text]
+#   document_template: "<…{text}>"                # task_title_prefix 계열만
+# probe:
+#   status: <ok | forced | probe_error>          # ok ⇔ embed 4종 중 probe_error 없음
+#   method: <static_v5 | live_v5>
+#   measured_at: <"" | ISO8601>
+#   measured_with: "<dist>==<설치 버전>"
+#   requires: "<dist><requires_range>"            # data/provider_classes.yaml requires_range
+#   measured_at_dimensions: <null | int>        # 실효 차원 ≠ 이 값이면 해석기가 로드를 거부(실측이 낡음)
+#   norm_measured: <null | float>
+#   runnable: {embed_query: <…>, embed_documents: <…>, aembed_query: <…>, aembed_documents: <…>}

@@ -1,0 +1,117 @@
+# langchain-model-preset-gen — 실측 상태 그래프 전이표 (배포자 소유)
+#
+# 소비자: langchain_model_preset_gen/probe_graph.py (LangGraph StateGraph). 라우터는 이 표만 읽는다.
+#   - 표에 없는 결과가 나오면 UndefinedTransition 으로 즉시 멈춘다(fail-fast).
+#   - 판정은 노드당 1회 호출이다. k-of-n 은 두지 않는다. 확률적 미관측은 재실측으로 다시 판정한다.
+#   - 호출 경로는 원문 HTTP(httpx)다. LangChain 은 vLLM 의 reasoning 필드를 버려 사고를 관측할 수 없기 때문이다.
+#   - temperature 를 포함한 sampling 은 수용·거부만 판정한다. 효과(같다/다르다)는 판정하지 않는다
+#     (사고를 켠 장문 생성은 temp 0 두 번이 같은 경우가 드물어 어느 쪽으로도 판정할 수 없다).
+
+# 탐침 요청 1건의 출력 상한(비용 상한). 실제 요청 상한 = min(실효 max_tokens, 이 값).
+#   불변식(테스트 핀): data/injection.yaml 의 모든 budget_tokens < 이 값 (Anthropic budget_tokens < max_tokens 규칙).
+probe_request_max_tokens: 4096
+
+prompts:
+  # on·off 판정은 같은 2단계 산수 질문을 쓴다. 쉬운 질문(수도 이름)은 적응형 모델이 사고를 건너뛰어 판정이 흔들리고,
+  # 더 어려운 질문은 소형 로컬 모델이 timeout·출력 상한에 걸린다.
+  off_check: "어떤 수에 3을 곱하고 7을 더했더니 31이 되었습니다. 그 수를 2로 나눈 값은? 숫자만 답하세요."
+  on_check: "어떤 수에 3을 곱하고 7을 더했더니 31이 되었습니다. 그 수를 2로 나눈 값은? 숫자만 답하세요."
+  # on_path 가 suppressed 일 때만 1회 쓰는 심화 질문(on_path_deep). 적응형 대형 모델은 on_check 에서 사고를 건너뛴다.
+  # 이 질문을 on_check 로 쓰면 소형 로컬 모델이 깨진다 — 그래서 공통 질문이 아니라 2단계로 둔다.
+  on_check_deep: "어떤 두 자리 수의 십의 자리 숫자와 일의 자리 숫자의 합은 11이고, 두 숫자를 바꾼 수는 원래 수보다 27 큽니다. 원래 수는? 숫자만 답하세요."
+  sampling_check: "대한민국의 수도는? 한 문장으로."   # 수용·거부만 보므로 짧은 질문
+  runnable_check: "hi"                              # 6 호출 방식·embed 4종·workflow_probe 입력 (호출 성공만 본다)
+  embedding_query_instruction: "Given a question, retrieve passages that answer the question"   # instruct_prefix 모델 실측용 {task}
+
+# "사고함" 판정: provider_class 별 경로 중 하나라도 값이 > 0 이면 사고한 것이다.
+#   text = 문자 수(합), tokens = 토큰 수(합). 경로가 응답에 없으면 0. 텍스트를 숨기는 모델이 있어 tokens 도 본다.
+# 경로 문법: 점(.) 구분, 숫자 = 목록 위치, `이름[키=값]`·`이름[키!=값]` = 목록에서 조건에 맞는 원소 전부
+#   (값 비교는 소문자 문자열, 키가 없는 원소는 != 에 맞는다).
+#   openai    : 사고 텍스트를 돌려주지 않는다 → reasoning_tokens 만.
+#   anthropic : thinking 블록. display=omitted 면 thinking 이 비고 signature 만 찬다 → signature 길이도 증거.
+#   google    : thought 파트는 includeThoughts 일 때만 온다 → usageMetadata.thoughtsTokenCount 가 주 증거.
+evidence:
+  openai_compatible:
+    text: [choices.0.message.reasoning, choices.0.message.reasoning_content]
+    tokens: [usage.completion_tokens_details.reasoning_tokens]
+  openai:
+    text: []
+    tokens: [usage.completion_tokens_details.reasoning_tokens]
+  anthropic:
+    text: ["content[type=thinking].thinking", "content[type=thinking].signature", "content[type=redacted_thinking].data"]
+    tokens: [usage.output_tokens_details.thinking_tokens]
+  google:
+    text: ["candidates.0.content.parts[thought=true].text"]
+    tokens: [usageMetadata.thoughtsTokenCount]
+
+# 답 본문·종료 사유. content 경로가 여러 값이면 이어 붙인다. finish_length = "출력 상한에 닿음" 종료 사유 값.
+answer:
+  openai_compatible: {content: choices.0.message.content, finish_reason: choices.0.finish_reason, finish_length: [length]}
+  openai: {content: choices.0.message.content, finish_reason: choices.0.finish_reason, finish_length: [length]}
+  anthropic: {content: "content[type=text].text", finish_reason: stop_reason, finish_length: [max_tokens]}
+  google: {content: "candidates.0.content.parts[thought!=true].text", finish_reason: candidates.0.finishReason, finish_length: [MAX_TOKENS]}
+
+# 사고 종료 표지 기본값. 프로필 reasoning_effort.end_marker 가 있으면 그것을 쓴다.
+end_markers_default: ["</think>", "</thinking>"]
+
+nodes:
+  connect:
+    request: "GET /models"
+    outcomes:
+      model_listed: off_gate
+      model_missing: T_model_missing
+  off_gate:                           # 판정만 (요청 없음) — mapping.none 칸의 action 을 본다
+    outcomes:
+      none_is_disable: off_probe
+      none_is_omit_or_level: R_off_not_available_declared
+  off_probe:                          # none 칸 주입 1회, prompts.off_check
+    outcomes:
+      clean: on_path                  # 사고 0, content 있음, marker 없음
+      leak: T_harmful_off             # 사고 0 인데 content 에 end_marker
+      thinking: T_off_ignored         # 사고 > 0
+      http_4xx: T_rejected
+      timeout: T_no_response_in_timeout
+  on_path:                            # 실효 effort 칸 주입 1회, prompts.on_check, 요청 timeout = 실효 timeout_seconds
+    outcomes:
+      healthy: sampling               # content 있음, marker 없음 (+ 칸이 set 이면 사고 > 0)
+      suppressed: on_path_deep        # 칸이 set 인데 사고 0 → 심화 질문 1회로 다시 본다
+      budget_exhausted: T_budget_exhausted   # 출력 상한 도달 AND content 비어 있음
+      timeout: T_no_response_in_timeout
+      leak: T_reasoning_leak          # content 에 end_marker
+      http_4xx: T_rejected
+  on_path_deep:                       # on_path suppressed 일 때만. 같은 실효 칸, prompts.on_check_deep, 1회
+    outcomes:
+      healthy: sampling
+      suppressed: T_on_suppressed     # 심화 질문에서도 사고 0
+      budget_exhausted: T_budget_exhausted
+      timeout: T_no_response_in_timeout
+      leak: T_reasoning_leak
+      http_4xx: T_rejected
+  sampling:                           # prompts.sampling_check, 실효 effort 칸 주입 상태에서
+    # 그 effort 단계에서 accepted 로 선언된 키마다 1회씩 실효값으로 보낸다. 판정은 4xx 여부뿐이다.
+    outcomes:
+      all_accepted_as_declared: PASS          # 보낸 키 전부 2xx (보낼 키가 0개여도 PASS)
+      declared_accepted_but_4xx: T_sampling_rejected
+      timeout: T_no_response_in_timeout
+  any:                                # 모든 요청 노드 공통
+    outcomes:
+      # 전송 실패에는 연결·풀·쓰기 timeout 이 들어간다. 위 노드표의 timeout 은 응답 대기 초과(ReadTimeout)뿐이다.
+      http_429_5xx_or_transport: U_undeterminable
+
+records:                              # 종착이 아닌 기록 상태 — 기록한 뒤 then 노드로 간다
+  R_off_not_available_declared:
+    then: on_path
+    meaning: "none 칸이 omit 또는 단계값으로 선언됨 — 끄기 불가가 모델 사실로 선언되어 off_probe 를 건너뜀"
+
+diagnoses:                            # 종착 → 진단·교정 후보 (자동 수정 없음)
+  PASS: "실측 통과 — runnable(6 호출 방식)까지 ok 여야 probe.status=ok"
+  T_model_missing: "엔드포인트 /models 에 model_name 이 없음 — 서빙 슬러그·base_url 확인"
+  T_harmful_off: "none 칸을 omit 또는 최저 단계로 재매핑 — 이 끄기 인자는 사고를 본문으로 흘린다"
+  T_off_ignored: "none 칸을 omit 또는 최저 단계로 재매핑 — 끄기가 무시된다"
+  T_rejected: "주입 방식(injection) 또는 값 오류 — injection id/값 확인"
+  T_on_suppressed: "이 단계 값을 주입하면 사고가 꺼진다 — 해당 칸을 omit(기본 사고)으로 재매핑하거나 다른 단계 값 검토"
+  T_budget_exhausted: "max_tokens가 이 모델의 사고에 부족 — limits.max_tokens 상향 또는 effort 하향"
+  T_no_response_in_timeout: "요청 timeout 안에 응답 불가 — timeout 상향"
+  T_reasoning_leak: "reasoning parser 미적용 의심 — 서버의 --reasoning-parser 확인"
+  T_sampling_rejected: "sampling 수용표에서 해당 키를 rejected로 정정"
+  U_undeterminable: "인프라 실패(429·5xx·전송) — 모델 사실 아님. 재시도 또는 표본 교체"

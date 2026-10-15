@@ -1,0 +1,43 @@
+# langchain-model-preset-gen — 어휘 정본 (배포자 소유)
+# 코드는 이 어휘를 하드코딩하지 않는다. 발행(publish)·해석(resolver)·실측(preflight)이 모두 이 파일을 읽는다.
+
+# effort 축 — 6단계 사용자 어휘(none~max). 모델 규칙과 프로필의 mapping 은 6칸을 모두 채운다.
+effort_levels: [none, low, medium, high, xhigh, max]
+
+# 칸 행동. set = value 주입 / disable = 끄기 인자 주입 / omit = 아무것도 넣지 않음(벤더 기본 동작).
+#   축약형: `low: low` 는 `{action: set, value: low}` 와 같다.
+#   set 의 value 는 data/injection.yaml 해당 방식의 values 키이거나 value_path 에 그대로 들어갈 값이다.
+slot_actions: [set, disable, omit]
+
+# sampling 축 수용표 상태. accepted 이고 값이 null 이 아닌 키만 요청에 싣는다.
+#   accepted = 받고 반영됨 / rejected = 보내면 4xx·인자 없음 / ignored = 받지만 효과 없음
+#   rejected·ignored 키를 override 로 요청하면 해석기가 거부한다.
+sampling_status: [accepted, rejected, ignored]
+sampling_keys: [temperature, top_p, top_k]
+# 키별 값은 상태 하나, 또는 effort 단계별 분기:
+#   {by_effort: {none: accepted, default: ignored}}  — 키는 effort_levels 일부 + default(나머지 전부).
+
+# LLM preset 의도 어휘 (presets/*.yaml intent 검증)
+intent:
+  values: [deterministic, grounded, balanced, creative]
+
+# probe.runnable 키 — LLM 6 호출 방식 / 임베딩 4 호출 방식
+runnable_methods_llm: [invoke, ainvoke, stream, astream, batch, abatch]
+runnable_methods_embedding: [embed_query, embed_documents, aembed_query, aembed_documents]
+
+#   ok          = 그 호출이 실제로 돌았다
+#   unsupported = provider 가 명시적으로 거부했다 (모델 사실)
+#   probe_error = 하네스가 확증하지 못했다 (429·timeout·네트워크·미측정)
+runnable_status_values: [ok, unsupported, probe_error]
+probe_status_values: [ok, forced, probe_error]
+
+# 임베딩 preset 의 intent/modality 어휘
+embedding_intent:
+  values: [retrieval, similarity, classification, clustering]
+embedding_modality:
+  values: [text, image]
+
+# supports.query_mode_surface / normalization 값
+embedding_query_mode_surfaces:
+  values: [instruct_prefix, task_title_prefix, task_type_param, none]
+embedding_normalization_values: [builtin, required]

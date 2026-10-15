@@ -1,0 +1,14 @@
+# 모델 규칙 1건 — 작성법은 model_rules/README.md
+match: granite-4.2-8b
+provider_class: openai_compatible
+injection: ct_enable_thinking
+mapping:
+  none: {action: disable}
+  low: {action: set, value: low_effort}
+  medium: {action: set, value: enable}
+  high: {action: set, value: enable}
+  xhigh: {action: set, value: enable}
+  max: {action: set, value: enable}
+end_marker: </think>
+sampling: {temperature: accepted, top_p: accepted, top_k: accepted}
+basis: '모델카드: enable_thinking true(기본)/false + low_effort; live 2026-10-14 false→reasoning 없음·16토큰, sweep off 0·on 395자; top_k 권장값 없음'

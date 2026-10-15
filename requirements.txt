@@ -1,0 +1,9 @@
+# langchain-model-preset-gen — 필수 의존성 3종
+langchain-core>=1.0,<2.0
+langgraph>=1.0,<2.0
+python-dotenv>=1.0,<2.0
+
+# provider 패키지는 쓰는 provider_class 것만 따로 설치한다 (data/provider_classes.yaml requires_range 와 같은 구간)
+#   openai · openai_compatible : pip install "langchain-openai>=1.0,<2.0"
+#   anthropic                   : pip install "langchain-anthropic>=1.0,<2.0"
+#   google                      : pip install "langchain-google-genai>=4.0,<5.0"

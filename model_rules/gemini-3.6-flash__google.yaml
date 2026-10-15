@@ -1,0 +1,14 @@
+# 모델 규칙 1건 — 작성법은 model_rules/README.md
+match: gemini-3.6-flash
+provider_class: google
+injection: gemini_level
+mapping:
+  none: {action: set, value: minimal}
+  low: {action: set, value: low}
+  medium: {action: set, value: medium}
+  high: {action: set, value: high}
+  xhigh: {action: set, value: high}
+  max: {action: set, value: high}
+end_marker: null
+sampling: {temperature: ignored, top_p: ignored, top_k: ignored}
+basis: thinking_level minimal·low·medium·high(OR 메타 google/gemini-3.6-flash mandatory true) → none=minimal, xhigh·max=high

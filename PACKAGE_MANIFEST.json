@@ -1,0 +1,697 @@
+{
+  "manifest_version": "1.0.0",
+  "package": "langchain-model-preset-gen",
+  "inventory_excludes": [
+    "PACKAGE_MANIFEST.json",
+    ".git/",
+    "__pycache__/",
+    ".pytest_cache/"
+  ],
+  "file_count": 114,
+  "files": [
+    {
+      "path": ".gitignore",
+      "bytes": 133,
+      "mode": "0644",
+      "sha256": "9a70a1947819e5f7d995ca7330c7ecf77b7e4723cc6cc331f574c5e5dfdafa34"
+    },
+    {
+      "path": "LICENSE",
+      "bytes": 1062,
+      "mode": "0644",
+      "sha256": "1680846400ddb3ade6e714077656b35fbcabfd34628e3520cb975c00c9dd6547"
+    },
+    {
+      "path": "README.md",
+      "bytes": 19787,
+      "mode": "0644",
+      "sha256": "ca12862bd907c12459087767af06311929dabb95580291ea050da2748f714516"
+    },
+    {
+      "path": "SKILL.md",
+      "bytes": 9076,
+      "mode": "0644",
+      "sha256": "130a5673b9ad025291340b190d77f683b9556e00b3f0167ff1817e8461f1c71d"
+    },
+    {
+      "path": "configs/config.example.yaml",
+      "bytes": 1430,
+      "mode": "0644",
+      "sha256": "a4033848a0e1bacc781691aff4fbfb3cbde4b8a3100f0cc5d8564e0db3b1c5c4"
+    },
+    {
+      "path": "data/embedding_capability.yaml",
+      "bytes": 2862,
+      "mode": "0644",
+      "sha256": "a3ba2bd9b9bf29884591dcee605c45e907c5b95939bfd029966085aa7ad5f360"
+    },
+    {
+      "path": "data/injection.yaml",
+      "bytes": 5477,
+      "mode": "0644",
+      "sha256": "cd88d801291b7193403754867027a49680b4adfeb0cf524c9c9bfccf6072874d"
+    },
+    {
+      "path": "data/probe_graph.yaml",
+      "bytes": 8603,
+      "mode": "0644",
+      "sha256": "c87b8b5b9c34add7bca7ff3db7aec501deb656dd634919889b30e9487efd0ffe"
+    },
+    {
+      "path": "data/provider_classes.yaml",
+      "bytes": 7047,
+      "mode": "0644",
+      "sha256": "ea548cfe5061a2c085e7c201af54177f5fd4fd8fd2f6d2ace095a90fc55234d1"
+    },
+    {
+      "path": "data/providers.yaml",
+      "bytes": 1729,
+      "mode": "0644",
+      "sha256": "8bfb5021069f24a451c11e6b894cdbdacb081ac71b733c46b0121043eb03c331"
+    },
+    {
+      "path": "data/query_mode_map.yaml",
+      "bytes": 887,
+      "mode": "0644",
+      "sha256": "a51820f4c1ba9d43970bdc54cd1a97ccd4cc784e9db4f8a97642c65a9ff105e2"
+    },
+    {
+      "path": "data/vocabulary.yaml",
+      "bytes": 2361,
+      "mode": "0644",
+      "sha256": "ed0cb0472daa4ac8d0bb015af6102f32934af975beabec9a774d45f0ebde8c75"
+    },
+    {
+      "path": "langchain_model_preset_gen/__init__.py",
+      "bytes": 860,
+      "mode": "0644",
+      "sha256": "959fda3bfe76a728be7cbc5a66b32dfe1bb00b887d6acf55988ecceeda6fa67d"
+    },
+    {
+      "path": "langchain_model_preset_gen/catalog.py",
+      "bytes": 10244,
+      "mode": "0644",
+      "sha256": "06f96faedcdfe67dc314480e804d060a901623c65214633de6cb4fe02d24d4f2"
+    },
+    {
+      "path": "langchain_model_preset_gen/derive_mapping.py",
+      "bytes": 8284,
+      "mode": "0644",
+      "sha256": "668ebfc2bd7d05d965cca540f80872ecea2da867b314c8957594e7db46e642af"
+    },
+    {
+      "path": "langchain_model_preset_gen/embeddings.py",
+      "bytes": 3726,
+      "mode": "0644",
+      "sha256": "c5751bbe2d6f4d5ad2021ccdd3a85b6f58b6a58fd997a066ce87c0ce2c8e4c36"
+    },
+    {
+      "path": "langchain_model_preset_gen/injection.py",
+      "bytes": 3624,
+      "mode": "0644",
+      "sha256": "56c532e0da81575ff88b1d42e9c94bd1f6d70425b6973a185e94d2025390f01b"
+    },
+    {
+      "path": "langchain_model_preset_gen/preflight.py",
+      "bytes": 22029,
+      "mode": "0644",
+      "sha256": "d7af861a13f8a4369550c546622348da9d7dd6b3a6255b7b308f941993cfa592"
+    },
+    {
+      "path": "langchain_model_preset_gen/probe_graph.py",
+      "bytes": 22548,
+      "mode": "0644",
+      "sha256": "aaacbe94d0d06a2ac3e8c78641b012e5313d79b962c7113cbc31722f645cfb84"
+    },
+    {
+      "path": "langchain_model_preset_gen/probe_runnable.py",
+      "bytes": 6229,
+      "mode": "0644",
+      "sha256": "99007947244eabd0c7f3ffa5eeaa667f9576f9f5ad49ff34428c9222bb811b0f"
+    },
+    {
+      "path": "langchain_model_preset_gen/publish.py",
+      "bytes": 13473,
+      "mode": "0644",
+      "sha256": "cdda08a799554105d727efb23a68963faae82de9fbcd468bca51cf509a219690"
+    },
+    {
+      "path": "langchain_model_preset_gen/resolver.py",
+      "bytes": 14995,
+      "mode": "0644",
+      "sha256": "908bfd5a1beb917d7c4795b9d70410adc876f2a712996ec95ca013707e360d05"
+    },
+    {
+      "path": "langchain_model_preset_gen/settings.py",
+      "bytes": 4758,
+      "mode": "0644",
+      "sha256": "7d91bba8dfe524b26999bf6ca4b786c48d5221f75e141ac27d86c7bc937d1d37"
+    },
+    {
+      "path": "langchain_model_preset_gen/workflow_probe.py",
+      "bytes": 2711,
+      "mode": "0644",
+      "sha256": "4122521c52057967a342384dc44bff16ff171d38d9c2e3d9edf7f11ff3194386"
+    },
+    {
+      "path": "model_rules/README.md",
+      "bytes": 6909,
+      "mode": "0644",
+      "sha256": "f99d9c7da10f7bd4eb33d631012e36a098c0790688cc7737b6463fea94e8b56d"
+    },
+    {
+      "path": "model_rules/claude-haiku-4-5__anthropic.yaml",
+      "bytes": 795,
+      "mode": "0644",
+      "sha256": "215522b6d05fa55784675255be86c3a41f04f4518a1d743ad4a2e82b5c1040c6"
+    },
+    {
+      "path": "model_rules/claude-opus-4-8__anthropic.yaml",
+      "bytes": 679,
+      "mode": "0644",
+      "sha256": "906b5299fa29c28d99a5071600888d81ee56ce18698e0daa11185713173ce417"
+    },
+    {
+      "path": "model_rules/claude-sonnet-5__anthropic.yaml",
+      "bytes": 629,
+      "mode": "0644",
+      "sha256": "7051b4f8de2ca3b0f7fc44e7d50051d546794df03a7f50e936d9fdb6b22d0082"
+    },
+    {
+      "path": "model_rules/deepseek-v4-flash__openai_compatible.yaml",
+      "bytes": 717,
+      "mode": "0644",
+      "sha256": "66400d20a7a6602b86aebd2ab865f01543c6f912bb3468b9599752214aafebbb"
+    },
+    {
+      "path": "model_rules/deepseek-v4-pro__openai_compatible.yaml",
+      "bytes": 676,
+      "mode": "0644",
+      "sha256": "b62f8462a74889be8fdb58feb41b732d26352f9e448816e40e194d3516e6d023"
+    },
+    {
+      "path": "model_rules/deepseek_deepseek-v4-flash__openai_compatible.yaml",
+      "bytes": 689,
+      "mode": "0644",
+      "sha256": "19c7e2bf2609aedacc849283874ec2782b78533d7e0ac7be15f92ab3f8b8ce00"
+    },
+    {
+      "path": "model_rules/deepseek_deepseek-v4-pro__openai_compatible.yaml",
+      "bytes": 687,
+      "mode": "0644",
+      "sha256": "2b0d7990e1162a02574bb18b288a9d71d7efe775a401543dc2d73ec0b44cbbf1"
+    },
+    {
+      "path": "model_rules/deepseek_deepseek-v4.1-flash__openai_compatible.yaml",
+      "bytes": 736,
+      "mode": "0644",
+      "sha256": "613f65c8adbbc264d21af484445fe37677546b6ca4c19236710d38b300cb0639"
+    },
+    {
+      "path": "model_rules/gemini-3.5-flash__google.yaml",
+      "bytes": 570,
+      "mode": "0644",
+      "sha256": "18112daca6d92bfc442d4b8863d88b92e12b02004e1b14d4f50c2723a59454e1"
+    },
+    {
+      "path": "model_rules/gemini-3.6-flash__google.yaml",
+      "bytes": 570,
+      "mode": "0644",
+      "sha256": "3fa4f961a844ab550a36d6676894eba68be8485191401cb3c1a0799cc9507c27"
+    },
+    {
+      "path": "model_rules/gemini-3.8-flash__google.yaml",
+      "bytes": 581,
+      "mode": "0644",
+      "sha256": "75c2bd9cb37606085910275f6c3c2c0614ab5c18c97c13da6e4c811452d586c9"
+    },
+    {
+      "path": "model_rules/gemma-4-12b-it__openai_compatible.yaml",
+      "bytes": 631,
+      "mode": "0644",
+      "sha256": "e9a75edde04eaada9c12326d17c88280c30299b6706128556833727bfc9e2e15"
+    },
+    {
+      "path": "model_rules/gemma-4-e2b-it__openai_compatible.yaml",
+      "bytes": 631,
+      "mode": "0644",
+      "sha256": "3a41e25008cdae5c98b73c5c3a9b6adfc379c99d4c8b7db07bebd44f50afff82"
+    },
+    {
+      "path": "model_rules/gemma-4-e4b-it__openai_compatible.yaml",
+      "bytes": 631,
+      "mode": "0644",
+      "sha256": "baf8d65d488dc20161a3b9164ab6a5989a62f1c7f990a673b1aa1eb609dd6e50"
+    },
+    {
+      "path": "model_rules/glm-5.2__openai_compatible.yaml",
+      "bytes": 592,
+      "mode": "0644",
+      "sha256": "2aee975a8ef34d5d75140013bcf3dddc5c9eda92e1110c72a8c79df8e7d861f6"
+    },
+    {
+      "path": "model_rules/google_gemma-3-12b-it__openai_compatible.yaml",
+      "bytes": 495,
+      "mode": "0644",
+      "sha256": "f6d4da87fe53797c40e223dc0906c6080500c3533497d7584aa7297e4d5985ad"
+    },
+    {
+      "path": "model_rules/google_gemma-3-27b-it__openai_compatible.yaml",
+      "bytes": 477,
+      "mode": "0644",
+      "sha256": "14d0666a5193e82354524ae58e8f8b376a87e3567d424400c7268f42737f69fd"
+    },
+    {
+      "path": "model_rules/google_gemma-4-26b-a4b-it__openai_compatible.yaml",
+      "bytes": 639,
+      "mode": "0644",
+      "sha256": "e42660ce44f29d2e21ddd7fc2a42abc6a82a00ed92b613ed21326477ae3a0e2b"
+    },
+    {
+      "path": "model_rules/google_gemma-4-31b-it__openai_compatible.yaml",
+      "bytes": 597,
+      "mode": "0644",
+      "sha256": "cf6d551e76cc98305b9f62377f67cd78f6662cfb8545de2247bf9ac2e1a0d77e"
+    },
+    {
+      "path": "model_rules/gpt-5.4-mini__openai.yaml",
+      "bytes": 643,
+      "mode": "0644",
+      "sha256": "2a07dfe79ab0ccf858585b369c369c414f4e40ad194b20e0c4ede20a2c420e10"
+    },
+    {
+      "path": "model_rules/gpt-5.6-luna__openai.yaml",
+      "bytes": 615,
+      "mode": "0644",
+      "sha256": "07039de58fa9f4fc473bf109e370e5fe1f0a4a147d8921295834483fb058a563"
+    },
+    {
+      "path": "model_rules/gpt-5.6-sol__openai.yaml",
+      "bytes": 613,
+      "mode": "0644",
+      "sha256": "11c30db5c25dde90dcebe220d77eda3b102e5a3102ea237d768ce4899d423450"
+    },
+    {
+      "path": "model_rules/gpt-5.6-terra__openai.yaml",
+      "bytes": 617,
+      "mode": "0644",
+      "sha256": "2ee83863063cafeabe804945a73977edff122a98aff76662c58697d18f2ca8b7"
+    },
+    {
+      "path": "model_rules/gpt-6-luna__openai.yaml",
+      "bytes": 654,
+      "mode": "0644",
+      "sha256": "8edf6ac3824fda49212c100ad5e1927323321d716cb244eacab1fe7fd5ff05c3"
+    },
+    {
+      "path": "model_rules/granite-4.2-8b__openai_compatible.yaml",
+      "bytes": 631,
+      "mode": "0644",
+      "sha256": "10eab748fe0911d5ca30653743eeca2f78a586d475ed48f1ffe217d66b789779"
+    },
+    {
+      "path": "model_rules/ibm-granite_granite-4.2-8b__openai_compatible.yaml",
+      "bytes": 588,
+      "mode": "0644",
+      "sha256": "ab53a3c849990d033a074531b1d3a4cf882f7578050572bf4670a823f82b7875"
+    },
+    {
+      "path": "model_rules/kimi-k2.6__openai_compatible.yaml",
+      "bytes": 580,
+      "mode": "0644",
+      "sha256": "27f12cb134d0c475233622aada9235db795330b0878763166d2339a1f2cc9408"
+    },
+    {
+      "path": "model_rules/kimi-k2.7-code__openai_compatible.yaml",
+      "bytes": 512,
+      "mode": "0644",
+      "sha256": "f68c4035df1a4aec7cfae2c5f118c5c947a80d7f410794765d00a7ef9f628d32"
+    },
+    {
+      "path": "model_rules/lfm2.5-2.6b__openai_compatible.yaml",
+      "bytes": 602,
+      "mode": "0644",
+      "sha256": "12cb618df5097d9b921a40bb81796371be67a5120334c4399c9189a7998ac4a4"
+    },
+    {
+      "path": "model_rules/meta_muse-glimmer-30b__openai_compatible.yaml",
+      "bytes": 599,
+      "mode": "0644",
+      "sha256": "43c8c090fff98b1a37938ea462423aef9e59b4ae8539b733f13529c47ecbd093"
+    },
+    {
+      "path": "model_rules/minicpm5-2b__openai_compatible.yaml",
+      "bytes": 614,
+      "mode": "0644",
+      "sha256": "0c8db5479211040c3314fca9e5b683bb65adb6049537b69d9ce3ab016f1e7ead"
+    },
+    {
+      "path": "model_rules/minimax-m3__openai_compatible.yaml",
+      "bytes": 592,
+      "mode": "0644",
+      "sha256": "63c57b713d3ee8ff15aaad56e6cd40d091f8d13662df9da66872e67c211146f0"
+    },
+    {
+      "path": "model_rules/minimax_minimax-m3__openai_compatible.yaml",
+      "bytes": 592,
+      "mode": "0644",
+      "sha256": "5a3e0be9dbb7492da1056b72bb421805c082b1842a17ff44b456e4ad73e54360"
+    },
+    {
+      "path": "model_rules/mistralai_mistral-small-2603__openai_compatible.yaml",
+      "bytes": 595,
+      "mode": "0644",
+      "sha256": "04b062bb10432e65b690b3be8697182575a66297f41e4865306aad2d929ae80c"
+    },
+    {
+      "path": "model_rules/moonshotai_kimi-k2.6__openai_compatible.yaml",
+      "bytes": 536,
+      "mode": "0644",
+      "sha256": "14ac9b0664fed48bcb5e5b821799955a8a9a26a3d4bd77753de966410d6af204"
+    },
+    {
+      "path": "model_rules/moonshotai_kimi-k2.7-code__openai_compatible.yaml",
+      "bytes": 542,
+      "mode": "0644",
+      "sha256": "27a5a3502bb0a9f0cb442889c339e02b45778b804974e99a09dfe70e540f4904"
+    },
+    {
+      "path": "model_rules/moonshotai_kimi-k3__openai_compatible.yaml",
+      "bytes": 534,
+      "mode": "0644",
+      "sha256": "02dffbdaa2c3292f5823fff454552f23dad430f3fd93d7b291353cfcace9abf4"
+    },
+    {
+      "path": "model_rules/nvidia_nemotron-3-super-120b-a12b__openai_compatible.yaml",
+      "bytes": 552,
+      "mode": "0644",
+      "sha256": "7e6eca16d212081e360ae31e50da931c42da88ab5cbf0228b1f4fbd402f4b2fd"
+    },
+    {
+      "path": "model_rules/openai_gpt-oss-120b__openai_compatible.yaml",
+      "bytes": 600,
+      "mode": "0644",
+      "sha256": "3c72678a1503bfffc53d13baf428721ad74f9a17ed06e7d6098f3afa8830e4c6"
+    },
+    {
+      "path": "model_rules/openai_gpt-oss-20b__openai_compatible.yaml",
+      "bytes": 568,
+      "mode": "0644",
+      "sha256": "4dc0d37f54e028e0d57cff6edf0b6f9ba744745ff96e05a323f5a5de254bc201"
+    },
+    {
+      "path": "model_rules/ornith-1.5-9b__openai_compatible.yaml",
+      "bytes": 606,
+      "mode": "0644",
+      "sha256": "2ff0d9684d8af8dcade1cc9e5ccc71d0cfb3619fb6209e6985e303691b054ec2"
+    },
+    {
+      "path": "model_rules/poolside_laguna-s-2.1__openai_compatible.yaml",
+      "bytes": 637,
+      "mode": "0644",
+      "sha256": "3d510149142df941a81e49a6a0f7778359b93cef719f572d9a7c18d478f8e301"
+    },
+    {
+      "path": "model_rules/qwen3-4b__openai_compatible.yaml",
+      "bytes": 632,
+      "mode": "0644",
+      "sha256": "57dbb0182aa25dc784977860b32ba094e32ae76f9c38b587bcb196ce57d3e19f"
+    },
+    {
+      "path": "model_rules/qwen_qwen3.5-122b-a10b__openai_compatible.yaml",
+      "bytes": 604,
+      "mode": "0644",
+      "sha256": "363658b20c382d7ff0e627bc307964e3cbab3bd13bb572b18677d021f2b54315"
+    },
+    {
+      "path": "model_rules/qwen_qwen3.5-27b__openai_compatible.yaml",
+      "bytes": 598,
+      "mode": "0644",
+      "sha256": "d7a28cf21ce762d6833632131250b2dad71b1d9a5cfea711ba487a713506ad0c"
+    },
+    {
+      "path": "model_rules/qwen_qwen3.5-35b-a3b__openai_compatible.yaml",
+      "bytes": 602,
+      "mode": "0644",
+      "sha256": "70ace61ce3a0382e1b18a2d2229700b330dca5b16e64df02624a2e3397baa406"
+    },
+    {
+      "path": "model_rules/qwen_qwen3.5-9b__openai_compatible.yaml",
+      "bytes": 597,
+      "mode": "0644",
+      "sha256": "84a61423ed641fab5c152cae362be8f5713a2f66ff51e7bc70a026f7394a0265"
+    },
+    {
+      "path": "model_rules/qwen_qwen3.6-27b__openai_compatible.yaml",
+      "bytes": 598,
+      "mode": "0644",
+      "sha256": "0b4d7c22a244ea2cc0fb6d8b9b14d8f121c56d5fc9949fe4d3e71f469a4887c4"
+    },
+    {
+      "path": "model_rules/qwen_qwen3.6-35b-a3b__openai_compatible.yaml",
+      "bytes": 602,
+      "mode": "0644",
+      "sha256": "655aecfc2cc59c58163e7d83053a67436ddba02b89ad32d0a93fd8bd456012e0"
+    },
+    {
+      "path": "model_rules/qwen_qwen3.8-27b__openai_compatible.yaml",
+      "bytes": 604,
+      "mode": "0644",
+      "sha256": "fc3a6137733220ea6648cf86b9e8d955769047835e177f2c9394ce1498b000dc"
+    },
+    {
+      "path": "model_rules/stealth_ox-alpha__openai_compatible.yaml",
+      "bytes": 620,
+      "mode": "0644",
+      "sha256": "92c957e09ed558a7b8af3debe215f29fa5f69ba9484b2fd5181019ac52b0f0a1"
+    },
+    {
+      "path": "model_rules/tencent_hy3__openai_compatible.yaml",
+      "bytes": 624,
+      "mode": "0644",
+      "sha256": "cfcf607985e1a578d2d56883010bb474429ed75002fde1ff9ccc1963eb6752a6"
+    },
+    {
+      "path": "model_rules/upstage_solar-mini4__openai_compatible.yaml",
+      "bytes": 573,
+      "mode": "0644",
+      "sha256": "e7ca8a6788a607f5e95a1fc0692de0cce1694c33100d9f69d13b5968b8e7e5cc"
+    },
+    {
+      "path": "model_rules/xiaomi_mimo-v2.6-flash__openai_compatible.yaml",
+      "bytes": 689,
+      "mode": "0644",
+      "sha256": "289be07921d5d0a452e8b8db670a78884555b869ab3867af2cc3c522137dad45"
+    },
+    {
+      "path": "model_rules/z-ai_glm-5.2__openai_compatible.yaml",
+      "bytes": 530,
+      "mode": "0644",
+      "sha256": "6fa96f04cc9e4b93d5290bacb61c3cf6ab81b87eff686ba0c262306059b8d328"
+    },
+    {
+      "path": "model_rules/z-ai_glm-5.3-flash__openai_compatible.yaml",
+      "bytes": 564,
+      "mode": "0644",
+      "sha256": "414486468b1b67cf28f85ce8be0dd3dca564b8136891edb8d7b34467aa775949"
+    },
+    {
+      "path": "model_rules/z-ai_glm-5.3__openai_compatible.yaml",
+      "bytes": 630,
+      "mode": "0644",
+      "sha256": "25303a6c7ad9ca5d21d071472b3813483222902be38e3d4289042453d427e765"
+    },
+    {
+      "path": "presets/BALANCED.yaml",
+      "bytes": 312,
+      "mode": "0644",
+      "sha256": "6a926e3a19395ddea3bcea2eced97499cf178d3050b74bc9bee2183816fa402f"
+    },
+    {
+      "path": "presets/CREATIVE.yaml",
+      "bytes": 327,
+      "mode": "0644",
+      "sha256": "4e15916f710d5adf0a28f53022077931339736170935bbc58eb58445f3fc05df"
+    },
+    {
+      "path": "presets/JUDGE.yaml",
+      "bytes": 398,
+      "mode": "0644",
+      "sha256": "a3d5e1f0a7f7fd03fe061383325e8a24bc69c724727ce659caf12f637909d5cf"
+    },
+    {
+      "path": "presets/RAG.yaml",
+      "bytes": 327,
+      "mode": "0644",
+      "sha256": "f3affce38d8db28c47466823c08a2471dc505787b2ff264ec01c220b861a247c"
+    },
+    {
+      "path": "presets/README.md",
+      "bytes": 3592,
+      "mode": "0644",
+      "sha256": "d1732288ecc2835f247d36f5e2962fa12c1afd27d547fd186408be7f584fa356"
+    },
+    {
+      "path": "presets/RETRIEVAL.yaml",
+      "bytes": 228,
+      "mode": "0644",
+      "sha256": "ab15a7d18c1290ecb879451c25c20e202d94812c778213adc7d7d8871201f46e"
+    },
+    {
+      "path": "presets/SQLGEN.yaml",
+      "bytes": 459,
+      "mode": "0644",
+      "sha256": "0219fd4e931f78072873e637d4bc1115236616ebc607ebf874502fb30d424902"
+    },
+    {
+      "path": "references/correction-standard.md",
+      "bytes": 7008,
+      "mode": "0644",
+      "sha256": "d6fc7e6c881afaed39c1c57308a47e58889b843beb444437c54b937788ae909d"
+    },
+    {
+      "path": "references/env-setup.md",
+      "bytes": 4827,
+      "mode": "0644",
+      "sha256": "5b08aa3cd69600e0c2756e5e42b51134220104b05e67d3b485991fc99a74d9fb"
+    },
+    {
+      "path": "references/hosts.md",
+      "bytes": 1695,
+      "mode": "0644",
+      "sha256": "b7870c1a31121458c57b026c924f1c0a0fcac4ac48a487566934f10afeccfb61"
+    },
+    {
+      "path": "references/override-guide.md",
+      "bytes": 4506,
+      "mode": "0644",
+      "sha256": "ef24ac42a7cb761a0c78699a7091149e045c257e67190c80bca451f398472e3f"
+    },
+    {
+      "path": "references/profile-skeleton.yaml",
+      "bytes": 9544,
+      "mode": "0644",
+      "sha256": "588c0ec1eff49da99ced91b42f16138c5d1536e137740c271e798810ed2ca205"
+    },
+    {
+      "path": "requirements-dev.txt",
+      "bytes": 32,
+      "mode": "0644",
+      "sha256": "0e7d800c45d87cda68e95d462890ae6a7a006b839af6247af7dc55d25aa725dc"
+    },
+    {
+      "path": "requirements.txt",
+      "bytes": 494,
+      "mode": "0644",
+      "sha256": "185ace9d96e6bcb72ddca0bb04f4f71c1bb6e7be4e5847bb68396fa4df02267c"
+    },
+    {
+      "path": "scripts/derive_mapping.py",
+      "bytes": 351,
+      "mode": "0755",
+      "sha256": "120067078a24d4ffed0e7a6d240388621aee7ea942290c493775c8d3daf6b4cb"
+    },
+    {
+      "path": "scripts/package_manifest.py",
+      "bytes": 2544,
+      "mode": "0755",
+      "sha256": "4b5a5b542cfbf4557a128ff73f20616b6ed24214a06b188c0e1aba913c652592"
+    },
+    {
+      "path": "scripts/preflight.py",
+      "bytes": 336,
+      "mode": "0755",
+      "sha256": "7f47063ac5adc4ee4697e4a0cf7f9745b0346085bbaa8adbfe8583c09a8f17e5"
+    },
+    {
+      "path": "scripts/probe.py",
+      "bytes": 336,
+      "mode": "0755",
+      "sha256": "268c60a4fb750a6c7ff573f93be086f200ab4a96f0d789293eb1c45e81a1314c"
+    },
+    {
+      "path": "scripts/publish.py",
+      "bytes": 330,
+      "mode": "0755",
+      "sha256": "e0a08af7eb74dbb8a137005f71bcaf23b303a715403eaf96ab4cc082d74758c5"
+    },
+    {
+      "path": "scripts/sanitize_check.py",
+      "bytes": 1987,
+      "mode": "0755",
+      "sha256": "3528ab6184276e1f51f8da50bfb0594738fcdae2f26f960d2db0338ed01f82fb"
+    },
+    {
+      "path": "tests/conftest.py",
+      "bytes": 4332,
+      "mode": "0644",
+      "sha256": "b58b03a5f1612de54ec6d3c832f117a92ce8b78ccc7d3e85829e01e5f1fda192"
+    },
+    {
+      "path": "tests/test_catalog.py",
+      "bytes": 7814,
+      "mode": "0644",
+      "sha256": "fe8e8e9c30c796b1d37eb127304d0640ff29e512397e5a812e2ba9b0e363b137"
+    },
+    {
+      "path": "tests/test_derive_mapping.py",
+      "bytes": 10652,
+      "mode": "0644",
+      "sha256": "e76dafc541759dbf6ad5d42c183e2472ac461597605da7a3fba6257e0535d710"
+    },
+    {
+      "path": "tests/test_injection.py",
+      "bytes": 4495,
+      "mode": "0644",
+      "sha256": "242b7b446c67b87f9ed4f1c8bbb0fcd8be73373c61b612515c593c291ef79eef"
+    },
+    {
+      "path": "tests/test_package.py",
+      "bytes": 3482,
+      "mode": "0644",
+      "sha256": "46d12e9e8b4a0a29c8279103c3c794738b6a806034b2d004b40039c4c89f551b"
+    },
+    {
+      "path": "tests/test_preflight.py",
+      "bytes": 19301,
+      "mode": "0644",
+      "sha256": "2214cc2b6100505074892ea8892684a85e4864379958b0b9654f560fa0a123db"
+    },
+    {
+      "path": "tests/test_probe_graph.py",
+      "bytes": 45291,
+      "mode": "0644",
+      "sha256": "f8f879f85ef66660e1247ef0223ef04ff5faaaea817250cb3adaa603d0a74545"
+    },
+    {
+      "path": "tests/test_probe_runnable.py",
+      "bytes": 7594,
+      "mode": "0644",
+      "sha256": "e9cc987c3fc1aee0aa398c4308fd14ab11ab129b724fdfca5dde5330567164ef"
+    },
+    {
+      "path": "tests/test_publish.py",
+      "bytes": 13430,
+      "mode": "0644",
+      "sha256": "107f4534b03913e66c5ed8578eda31f950979148c052d19efaa70e4b1365f550"
+    },
+    {
+      "path": "tests/test_resolver.py",
+      "bytes": 16440,
+      "mode": "0644",
+      "sha256": "c721b306e3064a2fe7ad3d95e17fb761104e507d0de7172bbe4e2ec77bae6a02"
+    },
+    {
+      "path": "tests/test_settings.py",
+      "bytes": 6365,
+      "mode": "0644",
+      "sha256": "418b0f6bae2d874d04726eeae74643d56223c2b89f2d2ddc35ff8a1645bcff3b"
+    },
+    {
+      "path": "tests/test_workflow_probe.py",
+      "bytes": 3269,
+      "mode": "0644",
+      "sha256": "f1f9fb2acfe1a7b866aedb3e6996f50dcb60b82159ab386b47a693b98a109a18"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+# 모델 규칙 1건 — 작성법은 model_rules/README.md
+match: moonshotai/kimi-k3
+provider_class: openai_compatible
+injection: or_reasoning
+mapping:
+  none: {action: disable}
+  low: {action: set, value: low}
+  medium: {action: set, value: high}
+  high: {action: set, value: high}
+  xhigh: {action: set, value: max}
+  max: {action: set, value: max}
+end_marker: null
+sampling: {temperature: accepted, top_p: accepted, top_k: accepted}
+basis: OR 메타 efforts max·high·low(default max), mandatory false → medium=high, xhigh=max

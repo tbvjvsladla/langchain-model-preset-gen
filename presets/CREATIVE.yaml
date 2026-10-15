@@ -1,0 +1,6 @@
+# preset — CREATIVE (창의·개방형 생성). 아이디어 발산·문안 작성처럼 다양한 출력이 필요한 작업.
+name: CREATIVE
+intent: creative
+sampling: {temperature: 0.9, top_p: 0.99, top_k: 40}
+effort: medium
+limits: {timeout_seconds: 120, max_retries: 2, response_deadline_seconds: null, max_tokens: 8192}

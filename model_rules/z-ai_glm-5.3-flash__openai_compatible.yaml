@@ -1,0 +1,14 @@
+# 모델 규칙 1건 — 작성법은 model_rules/README.md
+match: z-ai/glm-5.3-flash
+provider_class: openai_compatible
+injection: or_reasoning
+mapping:
+  none: {action: omit}
+  low: {action: omit}
+  medium: {action: omit}
+  high: {action: omit}
+  xhigh: {action: omit}
+  max: {action: omit}
+end_marker: null
+sampling: {temperature: accepted, top_p: accepted, top_k: accepted}
+basis: '실측 예외: OR 메타(mandatory true·efforts max·high·low)대로 effort=high 를 주면 사고 0(sweep 1·2차, on_suppressed), 미주입이면 사고 436자 → 6칸 omit'

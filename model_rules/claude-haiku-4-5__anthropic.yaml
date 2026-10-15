@@ -1,0 +1,20 @@
+# 모델 규칙 1건 — 작성법은 model_rules/README.md
+match: claude-haiku-4-5
+provider_class: anthropic
+injection: anthropic_thinking_budget
+mapping:
+  none: {action: disable}
+  low: {action: set, value: budget_2048}
+  medium: {action: set, value: budget_2048}
+  high: {action: set, value: budget_2048}
+  xhigh: {action: set, value: budget_2048}
+  max: {action: set, value: budget_2048}
+end_marker: null
+sampling:
+  temperature:
+    by_effort: {none: accepted, default: rejected}
+  top_p:
+    by_effort: {none: accepted, default: rejected}
+  top_k:
+    by_effort: {none: accepted, default: rejected}
+basis: effort 단계 없음·thinking budget_tokens 만(이전 조사 anthropic_budget_tokens, 예산 2048=SQLGEN 사고 예산) → 토글형, 사고 ON 이면 Anthropic 이 temp=1 강제

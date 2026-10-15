@@ -1,0 +1,14 @@
+# 모델 규칙 1건 — 작성법은 model_rules/README.md
+match: qwen/qwen3.5-122b-a10b
+provider_class: openai_compatible
+injection: or_reasoning
+mapping:
+  none: {action: disable}
+  low: {action: set, value: enable}
+  medium: {action: set, value: enable}
+  high: {action: set, value: enable}
+  xhigh: {action: set, value: enable}
+  max: {action: set, value: enable}
+end_marker: null
+sampling: {temperature: accepted, top_p: accepted, top_k: accepted}
+basis: OR 메타 mandatory false·단계 없음 → 토글형(이전 조사 qwen 의 enable_thinking 템플릿 인자 대신 통합 reasoning 객체)

@@ -1,0 +1,14 @@
+# 모델 규칙 1건 — 작성법은 model_rules/README.md
+match: claude-sonnet-5
+provider_class: anthropic
+injection: anthropic_effort
+mapping:
+  none: {action: disable}
+  low: {action: set, value: low}
+  medium: {action: set, value: medium}
+  high: {action: set, value: high}
+  xhigh: {action: set, value: xhigh}
+  max: {action: set, value: max}
+end_marker: null
+sampling: {temperature: rejected, top_p: rejected, top_k: rejected}
+basis: effort low~max 5단계(OR 메타 mandatory false → none=thinking disabled, 미실측), temp 는 기본값만 허용(이전 조사 conditional default_only)·OR 도 temperature 미지원

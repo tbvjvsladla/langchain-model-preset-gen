@@ -1,0 +1,14 @@
+# 모델 규칙 1건 — 작성법은 model_rules/README.md
+match: gemma-4-12b-it
+provider_class: openai_compatible
+injection: ct_enable_thinking
+mapping:
+  none: {action: disable}
+  low: {action: set, value: enable}
+  medium: {action: set, value: enable}
+  high: {action: set, value: enable}
+  xhigh: {action: set, value: enable}
+  max: {action: set, value: enable}
+end_marker: null
+sampling: {temperature: accepted, top_p: accepted, top_k: accepted}
+basis: 'Gemma 4 로컬 vLLM: 사고 기본 off, enable_thinking 주입 시 reasoning 분리(2026-07-28 실측 1304자); 종료 표지 미확인 → null(기본 표지로 판정)'

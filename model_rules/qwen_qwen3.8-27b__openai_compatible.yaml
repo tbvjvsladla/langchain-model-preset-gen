@@ -1,0 +1,14 @@
+# 모델 규칙 1건 — 작성법은 model_rules/README.md
+match: qwen/qwen3.8-27b
+provider_class: openai_compatible
+injection: or_reasoning
+mapping:
+  none: {action: disable}
+  low: {action: set, value: low}
+  medium: {action: set, value: medium}
+  high: {action: set, value: xhigh}
+  xhigh: {action: set, value: xhigh}
+  max: {action: set, value: xhigh}
+end_marker: null
+sampling: {temperature: accepted, top_p: accepted, top_k: accepted}
+basis: OR 메타 efforts xhigh·medium·low(default xhigh), mandatory false → high=xhigh, max=xhigh(상한); xhigh 는 8192 예산을 삼킨 실측(2026-08-25)

@@ -1,0 +1,24 @@
+# langchain-model-preset-gen 설치자 설정 — 이 파일을 configs/config.yaml 로 복사해 고친다.
+# 상대경로는 '설치 프로젝트 루트' 기준이다 = 스킬 폴더(<root>/.claude/skills/langchain-model-preset-gen)에서 세 단계 위.
+# 다른 위치에 설치했다면 절대경로를 쓴다. 다섯 키 모두 필수이고, 모르는 키는 거부한다.
+
+profiles_dir: envs/agents          # 프로필 발행 위치
+env_file_path: envs                # 이 폴더 바로 아래 *.env 에서 API 키를 찾는다 (환경변수가 있으면 환경변수 우선)
+
+providers:                         # 사이트 전용 serving_provider (공식 벤더는 스킬 data/providers.yaml). 없으면 {}
+  my_vllm_8001:
+    provider_class: openai_compatible
+    base_url: "http://<host>:8001/v1"
+    api_key_env: null              # null = 무인증 자체 호스팅
+
+overridable:                       # Agent 가 override 할 수 있는 키와 키별 기본값. 목록에서 빼면 그 키는 잠긴다.
+  temperature: null                # null = preset 값 사용, 값을 적으면 발행 시 preset 값 대신 들어간다
+  top_p: null
+  top_k: null
+  effort: null
+  timeout_seconds: null
+  max_retries: null
+  response_deadline_seconds: null
+  max_tokens: null
+
+workflow_probe: null               # 선택 — "패키지.모듈:함수". 함수(model) -> Runnable. null 이면 해석기 객체를 직접 실측

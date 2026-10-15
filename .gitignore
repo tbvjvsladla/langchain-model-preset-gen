@@ -1,0 +1,6 @@
+__pycache__/
+.pytest_cache/
+*.pyc
+# 설치자 소유 — 배포본에는 config.example.yaml 만 싣는다
+configs/config.yaml
+*.env

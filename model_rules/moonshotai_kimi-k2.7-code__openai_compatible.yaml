@@ -1,0 +1,14 @@
+# 모델 규칙 1건 — 작성법은 model_rules/README.md
+match: moonshotai/kimi-k2.7-code
+provider_class: openai_compatible
+injection: none
+mapping:
+  none: {action: omit}
+  low: {action: omit}
+  medium: {action: omit}
+  high: {action: omit}
+  xhigh: {action: omit}
+  max: {action: omit}
+end_marker: null
+sampling: {temperature: ignored, top_p: ignored, top_k: accepted}
+basis: OR 메타 mandatory true·단계 없음 → 6칸 omit; temp/top_p 는 OR supported_parameters 에 있으나 벤더 고정값 1.0/0.95(이전 조사) → ignored

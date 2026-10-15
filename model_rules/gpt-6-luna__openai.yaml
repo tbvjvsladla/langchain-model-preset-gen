@@ -1,0 +1,19 @@
+# 모델 규칙 1건 — 작성법은 model_rules/README.md
+match: gpt-6-luna
+provider_class: openai
+injection: openai_native
+mapping:
+  none: {action: disable}
+  low: {action: set, value: low}
+  medium: {action: set, value: medium}
+  high: {action: set, value: high}
+  xhigh: {action: set, value: xhigh}
+  max: {action: set, value: max}
+end_marker: null
+sampling:
+  temperature:
+    by_effort: {none: accepted, default: ignored}
+  top_p:
+    by_effort: {none: accepted, default: ignored}
+  top_k: rejected
+basis: OpenAI 6단계(none~max) 그대로 — OR 메타 openai/gpt-6-luna supported_efforts 6종·mandatory false, 사고 기본 on(이전 조사)

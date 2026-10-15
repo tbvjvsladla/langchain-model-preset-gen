@@ -1,0 +1,14 @@
+# 모델 규칙 1건 — 작성법은 model_rules/README.md
+match: gemini-3.8-flash
+provider_class: google
+injection: gemini_level
+mapping:
+  none: {action: set, value: low}
+  low: {action: set, value: low}
+  medium: {action: set, value: medium}
+  high: {action: set, value: high}
+  xhigh: {action: set, value: high}
+  max: {action: set, value: high}
+end_marker: null
+sampling: {temperature: ignored, top_p: ignored, top_k: ignored}
+basis: '공식: thinking_level LOW·MEDIUM(기본)·HIGH, MINIMAL 은 3.8 Flash 에서 API 검증 오류(2026-10-10) → none=low, xhigh·max=high'

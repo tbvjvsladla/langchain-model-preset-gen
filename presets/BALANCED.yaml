@@ -1,0 +1,6 @@
+# preset — BALANCED (용도 미정 범용 기본값). 작업 종류가 정해지지 않았을 때의 출발점.
+name: BALANCED
+intent: balanced
+sampling: {temperature: 0.2, top_p: 0.95, top_k: 30}
+effort: medium
+limits: {timeout_seconds: 120, max_retries: 2, response_deadline_seconds: null, max_tokens: 8192}

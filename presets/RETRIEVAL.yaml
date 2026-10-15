@@ -1,0 +1,5 @@
+# preset — RETRIEVAL (임베딩 검색). 임베딩 preset 은 sampling·effort·max_tokens·response_deadline_seconds 가 없다.
+name: RETRIEVAL
+intent: retrieval
+modality: text
+limits: {timeout_seconds: 120, max_retries: 2}

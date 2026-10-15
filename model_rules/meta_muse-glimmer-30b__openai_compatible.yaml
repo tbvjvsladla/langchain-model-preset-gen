@@ -1,0 +1,14 @@
+# 모델 규칙 1건 — 작성법은 model_rules/README.md
+match: meta/muse-glimmer-30b
+provider_class: openai_compatible
+injection: or_reasoning
+mapping:
+  none: {action: set, value: low}
+  low: {action: set, value: low}
+  medium: {action: set, value: medium}
+  high: {action: set, value: high}
+  xhigh: {action: set, value: xhigh}
+  max: {action: set, value: xhigh}
+end_marker: null
+sampling: {temperature: accepted, top_p: accepted, top_k: accepted}
+basis: OR 메타 mandatory true·efforts low~xhigh → none=low(최저), max=xhigh(상한); 사고 강제라 예산 소진 주의(이전 조사)

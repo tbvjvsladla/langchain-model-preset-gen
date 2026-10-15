@@ -1,0 +1,14 @@
+# 모델 규칙 1건 — 작성법은 model_rules/README.md
+match: minicpm5-2b
+provider_class: openai_compatible
+injection: ct_enable_thinking
+mapping:
+  none: {action: disable}
+  low: {action: set, value: enable}
+  medium: {action: set, value: enable}
+  high: {action: set, value: enable}
+  xhigh: {action: set, value: enable}
+  max: {action: set, value: enable}
+end_marker: </think>
+sampling: {temperature: accepted, top_p: accepted, top_k: accepted}
+basis: --reasoning-parser qwen3; live 2026-10-14 미주입 22자(적응형)/false 없음/true 1260자, sweep off 0·on 150자 → none=disable, 나머지 enable

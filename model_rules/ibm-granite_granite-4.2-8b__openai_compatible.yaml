@@ -1,0 +1,14 @@
+# 모델 규칙 1건 — 작성법은 model_rules/README.md
+match: ibm-granite/granite-4.2-8b
+provider_class: openai_compatible
+injection: or_reasoning
+mapping:
+  none: {action: disable}
+  low: {action: set, value: low}
+  medium: {action: set, value: high}
+  high: {action: set, value: high}
+  xhigh: {action: set, value: high}
+  max: {action: set, value: high}
+end_marker: null
+sampling: {temperature: accepted, top_p: accepted, top_k: accepted}
+basis: OR 메타 efforts high·low·none(default high) → medium=high, xhigh·max=high(상한); sweep 1차 off 0·on 608자, 2차 on 481자

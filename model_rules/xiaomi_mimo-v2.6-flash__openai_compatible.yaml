@@ -1,0 +1,14 @@
+# 모델 규칙 1건 — 작성법은 model_rules/README.md
+match: xiaomi/mimo-v2.6-flash
+provider_class: openai_compatible
+injection: or_reasoning
+mapping:
+  none: {action: disable}
+  low: {action: set, value: enable}
+  medium: {action: set, value: enable}
+  high: {action: set, value: enable}
+  xhigh: {action: set, value: enable}
+  max: {action: set, value: enable}
+end_marker: null
+sampling: {temperature: accepted, top_p: accepted, top_k: accepted}
+basis: OR 메타 mandatory false·단계 없음 → 토글형; sweep 2차 off 0·on 26자; 벤더 문서상 사고 시 temp/top_p 1.0/0.95 강제·Xiaomi 엔드포인트 top_k 미지원(이전 조사) — 수용표는 OR 메타 기준

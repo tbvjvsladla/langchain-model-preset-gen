@@ -1,0 +1,19 @@
+# 모델 규칙 1건 — 작성법은 model_rules/README.md
+match: gpt-5.4-mini
+provider_class: openai
+injection: openai_native
+mapping:
+  none: {action: disable}
+  low: {action: set, value: low}
+  medium: {action: set, value: medium}
+  high: {action: set, value: high}
+  xhigh: {action: set, value: xhigh}
+  max: {action: set, value: xhigh}
+end_marker: null
+sampling:
+  temperature:
+    by_effort: {none: accepted, default: ignored}
+  top_p:
+    by_effort: {none: accepted, default: ignored}
+  top_k: rejected
+basis: max 미지원(OR 메타 supported_efforts none~xhigh) → max 는 xhigh 로 상한, 사고 기본 off(default_enabled false)

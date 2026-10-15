@@ -1,0 +1,89 @@
+# langchain-model-preset-gen — effort 주입 방식 표 (배포자 소유)
+#
+# 해석 규칙 (resolver·probe 공통 — langchain_model_preset_gen/injection.py 한 곳이 펼친다)
+#   {action: disable}       → 이 표의 `disable` dict 를 넣는다. `disable` 이 없는 방식이면 로드 거부.
+#   {action: set, value: v} → v 가 `values` 에 있으면 그 dict, 없으면 `value_path` 에 v 를 그대로 넣는다. 둘 다 없으면 거부.
+#   {action: omit}          → 아무것도 넣지 않는다(벤더 기본 동작).
+# 값의 형식 = LangChain SDK 생성자 인자. 경로 `a.b.c` 는 중첩 dict 다
+#   (extra_body.reasoning.enabled: false → extra_body={"reasoning": {"enabled": false}}).
+# 실측 그래프(원문 HTTP)는 같은 dict 를 data/provider_classes.yaml http 형식으로 본문에 옮긴다.
+# 새 방식은 키를 추가하면 된다. 모델 규칙의 injection 은 이 표의 키여야 한다.
+
+# OpenRouter 통합 reasoning 객체 — OpenRouter 경유 openai_compatible 모델.
+#   SDK : ChatOpenAI(extra_body={"reasoning": {...}})  /  HTTP: 본문 최상위 {"reasoning": {...}}
+#   실측: 15종에서 on/off 작동. 예외 glm-5.3-flash effort=high 는 사고 0 (→ T_on_suppressed, 규칙에서 omit).
+or_reasoning:
+  disable: {extra_body.reasoning.enabled: false}
+  values:
+    enable: {extra_body.reasoning.enabled: true}       # 단계 없는 토글형
+  value_path: extra_body.reasoning.effort              # 단계형
+
+# 로컬 vLLM chat template.
+#   SDK : ChatOpenAI(extra_body={"chat_template_kwargs": {...}})  /  HTTP: 본문 최상위 {"chat_template_kwargs": {...}}
+#   실측: granite·minicpm5·ornith 는 on/off 작동. lfm 은 템플릿이 끄기를 무시하고 사고가 content 로 샌다(→ none 방식).
+ct_enable_thinking:
+  disable: {extra_body.chat_template_kwargs.enable_thinking: false}
+  values:
+    enable: {extra_body.chat_template_kwargs.enable_thinking: true}
+    low_effort: {extra_body.chat_template_kwargs.enable_thinking: true, extra_body.chat_template_kwargs.low_effort: true}   # granite 4.2 모델카드 low-effort 모드
+
+# 벤더 직결 openai_compatible — thinking 토글 (Kimi·MiniMax 네이티브 API).
+xb_thinking:
+  disable: {extra_body.thinking.type: disabled}
+  values:
+    enable: {extra_body.thinking.type: enabled}
+
+# 벤더 직결 openai_compatible — thinking 토글 + reasoning_effort 단계 (DeepSeek·Z.ai 네이티브 API).
+#   두 벤더 모두 사고 기본 ON 이라 단계값은 reasoning_effort 만 넣는다.
+xb_thinking_effort:
+  disable: {extra_body.thinking.type: disabled}
+  value_path: extra_body.reasoning_effort
+
+# ChatOpenAI 직결 (provider_class openai). none 은 OpenAI 공식 단계값이다.
+#   SDK : ChatOpenAI(reasoning_effort="medium")
+#   HTTP: POST /v1/chat/completions {"reasoning_effort": "medium", "max_completion_tokens": N}
+openai_native:
+  disable: {reasoning_effort: none}
+  value_path: reasoning_effort
+
+# ChatAnthropic 직결 — effort 단계, thinking 기본 켜짐 모델 (claude-sonnet-5 형).
+#   SDK : ChatAnthropic(effort="medium") / ChatAnthropic(thinking={"type": "disabled"})
+#   HTTP: POST /v1/messages {"output_config": {"effort": "medium"}} / {"thinking": {"type": "disabled"}}
+#   주의(벤더 문서): 모델에 따라 xhigh·max 와 disabled 를 함께 못 쓰거나 disabled 자체를 거부한다.
+#   주의(SDK): langchain-anthropic 일부 버전은 모델명에 따라 effort 와 함께 thinking adaptive 를 스스로 더한다.
+#             실측 그래프(원문 HTTP)는 그 인자를 보내지 않는다.
+anthropic_effort:
+  disable: {thinking.type: disabled}
+  value_path: effort
+
+# ChatAnthropic 직결 — effort 단계, thinking 기본 꺼짐 모델 (claude-opus-4-8 형). set 칸이 thinking adaptive 를 함께 싣는다.
+#   SDK : ChatAnthropic(thinking={"type": "adaptive"}, effort="high")
+#   HTTP: POST /v1/messages {"thinking": {"type": "adaptive"}, "output_config": {"effort": "high"}}
+#   실측: effort 단독 → thinking 블록 없음, + thinking adaptive → thinking 블록.
+anthropic_adaptive_effort:
+  disable: {thinking.type: disabled}
+  values:
+    low: {thinking.type: adaptive, effort: low}
+    medium: {thinking.type: adaptive, effort: medium}
+    high: {thinking.type: adaptive, effort: high}
+    xhigh: {thinking.type: adaptive, effort: xhigh}
+    max: {thinking.type: adaptive, effort: max}
+
+# ChatAnthropic 직결 — effort 단계가 없는 모델의 thinking 예산 (claude-haiku-4-5).
+#   SDK : ChatAnthropic(thinking={"type": "enabled", "budget_tokens": 2048})
+#   HTTP: {"thinking": {"type": "enabled", "budget_tokens": 2048}, "max_tokens": N}
+#         — budget_tokens ≥ 1024 이고 < max_tokens 여야 한다(아니면 400). limits.max_tokens 도 이 조건을 지킨다.
+anthropic_thinking_budget:
+  disable: {thinking.type: disabled}
+  values:
+    budget_2048: {thinking.type: enabled, thinking.budget_tokens: 2048}
+
+# ChatGoogleGenerativeAI 직결 — thinking_level. Gemini 3.x 는 사고를 끌 수 없어 disable 이 없다.
+#   SDK : ChatGoogleGenerativeAI(thinking_level="medium")
+#   HTTP: POST /v1beta/models/{model}:generateContent {"generationConfig": {"thinkingConfig": {"thinkingLevel": "medium"}}}
+#   실측: gemini-3.6-flash minimal → thoughtsTokenCount 0 (minimal 은 사실상 끄기).
+gemini_level:
+  value_path: thinking_level
+
+# 손잡이 없음 — 6칸 전부 omit (비추론 모델, 끌 수 없고 단계도 없는 모델).
+none: {}

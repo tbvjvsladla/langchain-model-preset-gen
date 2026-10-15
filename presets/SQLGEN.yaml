@@ -1,0 +1,7 @@
+# preset — SQLGEN (결정론 SQL 생성). 같은 질문에 같은 SQL 이 나오도록 temperature 0.0만 보내고 top_p·top_k 는 보내지 않는다(null).
+#   모델카드가 temperature 0.0 을 권하지 않으면 Agent 쪽 override 로 고친다.
+name: SQLGEN
+intent: deterministic
+sampling: {temperature: 0.0, top_p: null, top_k: null}
+effort: medium
+limits: {timeout_seconds: 180, max_retries: 2, response_deadline_seconds: null, max_tokens: 8192}

@@ -1,0 +1,15 @@
+# langchain-model-preset-gen — 임베딩 입력 형식 메커니즘 (배포자 소유)
+# supports.query_mode_surface → 해석기(ProfileEmbeddings)가 쓰는 메커니즘. 키 집합 = vocabulary embedding_query_mode_surfaces.
+#   text_prefix      — query 앞에 prefix_template 렌더 결과를 붙인다. document 는 원문.
+#                      {task} 는 load_embeddings(query_instruction=...) 로 받는다(없으면 로드 거부).
+#   text_prefix_both — query 는 prefix_template, document 는 document_template 으로 렌더한다.
+#   sdk_kwarg        — 어댑터가 경로별 task_type 을 스스로 보낸다. 텍스트는 바꾸지 않는다.
+#   null             — 대칭 모델. 변형하지 않는다.
+instruct_prefix:
+  mechanism: text_prefix
+task_title_prefix:
+  mechanism: text_prefix_both
+task_type_param:
+  mechanism: sdk_kwarg
+none:
+  mechanism: null

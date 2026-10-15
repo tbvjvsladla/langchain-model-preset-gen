@@ -1,0 +1,19 @@
+# 모델 규칙 1건 — 작성법은 model_rules/README.md
+match: deepseek/deepseek-v4-pro
+provider_class: openai_compatible
+injection: or_reasoning
+mapping:
+  none: {action: disable}
+  low: {action: set, value: high}
+  medium: {action: set, value: high}
+  high: {action: set, value: high}
+  xhigh: {action: set, value: xhigh}
+  max: {action: set, value: xhigh}
+end_marker: null
+sampling:
+  temperature:
+    by_effort: {none: accepted, default: ignored}
+  top_p:
+    by_effort: {none: accepted, default: ignored}
+  top_k: accepted
+basis: OR 메타 efforts xhigh·high, mandatory false → low·medium=high, max=xhigh(상한); 사고 모드는 샘플링 무시(이전 조사 mode_bound)
