@@ -233,7 +233,7 @@ def _patch_live(monkeypatch, terminal="PASS", runnable_status="ok", kind="llm", 
         calls["pg_spec"] = spec
         return _pg_result(terminal)
 
-    def fake_runnable(spec, key, data, factory=None):
+    def fake_runnable(spec, key, data):
         calls["run_spec"] = spec
         methods = EMB_METHODS if kind == "embedding" else LLM_METHODS
         status = "ok" if runnable_status == "ok" else "probe_error"

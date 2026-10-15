@@ -490,6 +490,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--skill-dir", default=str(SKILL_DIR))
     ap.add_argument("--mermaid", action="store_true", help="그래프 mermaid 출력")
     args = ap.parse_args(argv)
+    if not args.profile and not args.mermaid:
+        ap.error("--profile 이 필요하다 (--mermaid 만 출력할 때는 생략)")       # 실측 없이 PASS(0)를 내지 않는다 → 2
     init_cli_logging()
     skill_dir = Path(args.skill_dir)
     if args.mermaid:

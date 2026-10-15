@@ -21,4 +21,4 @@ overridable:                       # Agent 가 override 할 수 있는 키와 �
   response_deadline_seconds: null
   max_tokens: null
 
-workflow_probe: null               # 선택 — "패키지.모듈:함수". 함수(model) -> Runnable. null 이면 해석기 객체를 직접 실측
+workflow_probe: null               # 선택 — "패키지.모듈:함수". 함수(model) -> Runnable. preflight --checks workflow 가 쓴다(기록 없음)

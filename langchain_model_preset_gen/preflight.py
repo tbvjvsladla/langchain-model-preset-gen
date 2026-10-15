@@ -6,7 +6,9 @@
   v3       사용가능성  : 미니 호출 1회 (200 = OK / 401·403 = 키 불량 / 402·429 = 잔액·쿼터 / 전송 실패 = FAIL).
   v4-1     정적 스키마 : API 0회. 발행 형식·잠금 필드 = provider 표·6칸·sampling·probe 블록 형태.
   pg       실측 그래프 : 끄기·켜기 + sampling 수용 (LLM 전용, probe_graph).
-  runnable 호출 방식   : 해석기 객체(또는 configs workflow_probe 가 감싼 대상)로 LLM 6종 / 임베딩 4종 + 노름·차원.
+  runnable 호출 방식   : 해석기 객체 그대로 LLM 6종 / 임베딩 4종 + 노름·차원 (프로필 probe 에 기록되는 대상).
+  workflow 교정 후 실측: configs workflow_probe 가 감싼 workflow 로 같은 호출 방식을 돌린다. 결과는 출력만 하고
+                       프로필에 기록하지 않는다 — 프로필 probe 는 모델·플랫폼의 사실이고, workflow 결과는 그 workflow 의 사실이다.
 --write-back (검사가 중간에 예외로 멈추면 쓰지 않는다. --override 와 같이 쓸 수 없다):
   LLM    : pg 와 runnable 이 필요하다. probe = {status, method: probe_graph_live, measured_at, terminal, runnable}.
            status = ok ⇔ pg 종착 PASS AND runnable 6종 전부 ok. 그 밖은 probe_error.
@@ -39,7 +41,8 @@ from . import settings as st
 from . import workflow_probe as wp
 
 SKILL_DIR = catalog.SKILL_DIR
-CHECK_ORDER = ("v1", "v2", "v3", "v4-1", "pg", "runnable")
+CHECK_ORDER = ("v1", "v2", "v3", "v4-1", "pg", "runnable", "workflow")
+WORKFLOW_CHECK = "workflow"
 
 LLM_LIVE_PROBE_METHOD = "probe_graph_live"
 EMBEDDING_LIVE_PROBE_METHOD = "live_v5"
@@ -216,22 +219,34 @@ def _check_v4_1_embedding(profile: dict, vocab: dict, skill_dir: Path) -> dict:
 
 # ════════════════ runnable ════════════════
 
-def check_runnable(spec: dict, key: str | None, data: dict, factory=None) -> dict:
-    """해석기 객체(또는 factory(객체))로 호출 방식 실측. 임베딩은 raw 노름·차원도 잰다."""
-    vocab = data["vocabulary"]
-    prompts = data["probe_graph"]["prompts"]
+def _build_model(spec: dict, key: str | None, data: dict):
+    if spec["kind"] == rs.KIND_EMBEDDING:
+        return rs.build_embeddings(spec, key, data["probe_graph"]["prompts"]["embedding_query_instruction"])
+    return rs.build_chat_model(spec, key)
+
+
+def _run_call_modes(target, spec: dict, data: dict) -> dict:
     is_emb = spec["kind"] == rs.KIND_EMBEDDING
-    if is_emb:
-        model = rs.build_embeddings(spec, key, prompts["embedding_query_instruction"])
-    else:
-        model = rs.build_chat_model(spec, key)
-    target = model if factory is None else wp.build_target(factory, model, embedding=is_emb)
+    vocab = data["vocabulary"]
     methods = vocab["runnable_methods_embedding"] if is_emb else vocab["runnable_methods_llm"]
-    report = pr.check_runnable(target, methods, prompts["runnable_check"], embedding=is_emb)
+    report = pr.check_runnable(target, methods, data["probe_graph"]["prompts"]["runnable_check"], embedding=is_emb)
     report["target"] = type(target).__name__
-    if is_emb and report["runnable"]["embed_query"] == pr.RUNNABLE_OK:
-        report.update(pr.measure_embedding(model.inner, prompts["runnable_check"]))
     return report
+
+
+def check_runnable(spec: dict, key: str | None, data: dict) -> dict:
+    """해석기 객체 그대로 호출 방식 실측(프로필에 기록되는 결과). 임베딩은 raw 노름·차원도 잰다."""
+    model = _build_model(spec, key, data)
+    report = _run_call_modes(model, spec, data)
+    if spec["kind"] == rs.KIND_EMBEDDING and report["runnable"]["embed_query"] == pr.RUNNABLE_OK:
+        report.update(pr.measure_embedding(model.inner, data["probe_graph"]["prompts"]["runnable_check"]))
+    return report
+
+
+def check_workflow(spec: dict, key: str | None, data: dict, factory) -> dict:
+    """factory(해석기 객체)가 돌려준 workflow 로 같은 호출 방식 실측 — 기록하지 않는 교정 후 확인."""
+    target = wp.build_target(factory, _build_model(spec, key, data), embedding=spec["kind"] == rs.KIND_EMBEDDING)
+    return _run_call_modes(target, spec, data)
 
 
 # ════════════════ write-back ════════════════
@@ -310,6 +325,8 @@ def preflight(profile_path: str | Path, checks: list[str], *, write_back_flag: b
     order = _normalize_checks(checks, profile)
     is_emb = profile["kind"] == rs.KIND_EMBEDDING
     if write_back_flag:
+        if WORKFLOW_CHECK in order:
+            raise ValueError("--write-back 은 workflow 검사와 함께 쓸 수 없다 — workflow 결과는 프로필에 기록하지 않는다")
         if override:
             raise ValueError("--write-back 은 --override 와 함께 쓸 수 없다 — 실측값이 프로필 기본값이 아니다")
         need = {"runnable"} if is_emb else {"pg", "runnable"}
@@ -319,6 +336,9 @@ def preflight(profile_path: str | Path, checks: list[str], *, write_back_flag: b
         raise ValueError("pg(실측 그래프)는 LLM 전용이다")
     data = catalog.load_data(skill_dir)
     cfg = st.load_settings(skill_dir)
+    factory = wp.configured_factory(skill_dir) if WORKFLOW_CHECK in order else None
+    if WORKFLOW_CHECK in order and factory is None:
+        raise ValueError("workflow 검사에는 configs/config.yaml workflow_probe 가 필요하다 (\"패키지.모듈:함수\")")
     providers = catalog.merge_providers(data["providers"], cfg["providers"])
     spec = rs.resolve(profile, override, data=data)
     key = st.resolve_api_key(spec["api_key_env"], cfg["env_file_path"])
@@ -351,10 +371,15 @@ def preflight(profile_path: str | Path, checks: list[str], *, write_back_flag: b
                   f"records={pg_result['records']}\n       진단: {pg_result['diagnosis']}")
             rc |= status == "FAIL"
     if "runnable" in order:
-        runnable = check_runnable(spec, key, data, wp.configured_factory(skill_dir))
+        runnable = check_runnable(spec, key, data)
         status = "PASS" if runnable["status"] == pr.PROBE_OK else "FAIL"
         extra = {k: runnable[k] for k in ("norm_measured", "measured_at_dimensions") if k in runnable}
         print(f"  RUN  {status} target={runnable['target']} runnable={runnable['runnable']} {extra or ''}")
+        rc |= status == "FAIL"
+    if WORKFLOW_CHECK in order:
+        workflow = check_workflow(spec, key, data, factory)
+        status = "PASS" if workflow["status"] == pr.PROBE_OK else "FAIL"
+        print(f"  WF   {status} target={workflow['target']} runnable={workflow['runnable']} (기록하지 않음)")
         rc |= status == "FAIL"
     if write_back_flag:
         written = write_back(profile_path, profile, pg_result, runnable, today or datetime.date.today(), _now_iso(),

@@ -917,3 +917,11 @@ def test_probe_body_equals_resolver_render_for_every_rule_and_level(skill, rule)
         body = pg.native_body(http, rule["match"], "q", REAL_CAP, extras)
         if http["api"] == pg.API_CHAT_COMPLETIONS:
             assert _subset(inj.to_http_body(extras), body), (level, body)
+
+
+def test_probe_cli_without_profile_is_usage_error_not_pass(capsys):
+    """--profile 없이 실측 없이 종료코드 0(PASS)을 내지 않는다 — 인자 오류(2). --mermaid 만은 정상 출력."""
+    with pytest.raises(SystemExit) as e:
+        pg.main([])
+    assert e.value.code == 2
+    assert pg.main(["--mermaid"]) == 0 and "graph" in capsys.readouterr().out

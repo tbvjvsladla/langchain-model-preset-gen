@@ -155,3 +155,20 @@ def test_env_file_export_syntax_parsed_not_executed(env_dir, tmp_path):
     (env_dir / "a.env").write_text(f"export {KEY}=exported\nX=$(touch {marker})\n", encoding="utf-8")
     assert st.resolve_api_key(KEY, env_dir) == "exported"
     assert not marker.exists()
+
+
+# ── 적대 리뷰 보강: 공백·제어문자가 섞인 키는 거부(값을 메시지에 싣지 않는다) ─────────────
+
+@pytest.mark.parametrize("value", ["sk-SECRET\n", "sk-SECRET\r", " ", "sk SECRET", "\tsk-SECRET"])
+def test_env_key_with_whitespace_or_control_rejected_from_environ(env_dir, monkeypatch, value):
+    monkeypatch.setenv(KEY, value)
+    with pytest.raises(ValueError) as e:
+        st.resolve_api_key(KEY, env_dir)
+    assert "SECRET" not in str(e.value) and KEY in str(e.value)
+
+
+def test_env_key_with_escaped_newline_in_file_rejected(env_dir):
+    (env_dir / "a.env").write_text(f'{KEY}="sk-SECRET\\n"\n', encoding="utf-8")
+    with pytest.raises(ValueError) as e:
+        st.resolve_api_key(KEY, env_dir)
+    assert "SECRET" not in str(e.value) and "a.env" in str(e.value)

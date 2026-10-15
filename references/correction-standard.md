@@ -24,7 +24,9 @@ emb = load_embeddings(profile_path, override, query_instruction=TASK_TEXT)
   ```python
   llm = load_chat_model(profile_path, override, client_kwargs={"stream_usage": True})
   ```
-  프로필이 관리하는 이름(`model`·키·`base_url`·`max_tokens`·`timeout`·`max_retries`·`temperature`·`top_p`·`extra_body`·`reasoning_effort`·`effort`·`thinking`·`thinking_level` 등, 정확한 목록은 `resolve(...)["reserved_kwargs"]`)을 넣으면 `LockedKeyError`가 난다. 그 값은 override로 바꾼다.
+  프로필이 관리하는 이름(`model`·키·`base_url`·`max_tokens`·`timeout`·`max_retries`·`temperature`·`top_p`·`extra_body`·`reasoning_effort`·`effort`·`thinking`·`thinking_level`·`reasoning`·`model_kwargs` 등, 정확한 목록은 `resolve(...)["reserved_kwargs"]`)을 넣으면 `LockedKeyError`가 난다. 그 값은 override로 바꾼다.
+  - 잠금은 SDK 필드 단위다. 같은 필드의 alias(예: ChatOpenAI `max_completion_tokens` = `max_tokens`)도 거부된다.
+  - SDK 클래스의 필드가 아닌 이름은 `ValueError`다. LangChain은 모르는 이름을 `model_kwargs`로 옮겨 요청 본문에 싣기 때문이다.
 - 로그·응답에 "적용한 값"을 남기는 코드는 `resolve(profile_path, override)["sent"]`를 쓴다. 그 effort에서 받지 않는 sampling은 `None`으로 나온다. 요청한 값 그대로는 `["effective"]`다.
 - 기동 시 확인하는 `probe.status`도 `resolve(...)["probe"]["status"]`로 읽는다.
 
@@ -48,6 +50,7 @@ emb = load_embeddings(profile_path, override, query_instruction=TASK_TEXT)
   python <스킬>/scripts/probe.py --profile <프로필> --override '<override JSON>'
   ```
   종료코드 0 = PASS, 10 = probe_error(실측 결과 — 기동 거부), 그 밖(1 = 예외, 2 = 인자 오류) = 도구 실패(결과로 취급하지 말고 원인 보고). 실측 그래프는 LLM 전용이다.
+- 이 게이트가 검증하는 override는 **effort·sampling**이다. 실측 그래프는 출력 상한을 실측용 상한(`data/probe_graph.yaml`)으로 줄여 보내고 `max_retries`·`response_deadline_seconds`를 쓰지 않는다. limits override(`max_tokens`·`timeout_seconds`·`max_retries`·`response_deadline_seconds`)의 값이 맞는지는 이 게이트로 확인되지 않는다 — 모델 출력 한도 안의 값인지 사람이 확인한다.
 
 ## 6. 교정 전후 동등성을 테스트로 고정한다
 교정이 보내는 인자를 바꾸지 않았음을 결정론 테스트(LLM·네트워크 없음)로 핀한다.
@@ -67,9 +70,15 @@ emb = load_embeddings(profile_path, override, query_instruction=TASK_TEXT)
    - 한 설정을 LLM·임베딩 실측이 같이 쓴다. 두 종류를 함께 실측한다면 함수가 받은 객체 종류에 맞는 대상을 돌려줘야 한다.
 2. 실측한다.
    ```bash
-   python <스킬>/scripts/preflight.py --profile <프로필> --checks pg,runnable
+   python <스킬>/scripts/preflight.py --profile <프로필> --checks pg,runnable --write-back   # 모델 실측 — 프로필에 기록
+   python <스킬>/scripts/preflight.py --profile <프로필> --checks workflow                   # workflow 실측 — 출력만
    ```
-   - `runnable`은 workflow를 통해 6 호출 방식(임베딩은 embed 4종)을 돌린다. 끄기·켜기 판정은 Runnable 출력으로 관측할 수 없어 같은 해석기 인자로 원문 HTTP 그래프(`pg`)가 판정한다.
-   - 이 실측이 추가로 증명하는 것은 "그 workflow를 통해 호출 방식이 동작한다"이다.
-3. 결과를 프로필에 기록하려면 `--write-back`을 붙인다(override 없이). 기록 후 `probe.status`가 `ok`인지 확인한다.
+   - `runnable`은 해석기 객체 그대로 6 호출 방식(임베딩은 embed 4종)을 돌리고, 그 결과만 프로필 `probe`에 기록된다.
+   - `workflow`는 workflow를 통해 같은 호출 방식을 돌린다. 결과는 그 workflow의 사실이라 프로필에 기록하지 않는다.
+     끄기·켜기 판정은 Runnable 출력으로 관측할 수 없어 같은 해석기 인자로 원문 HTTP 그래프(`pg`)가 판정한다.
+   - workflow 진입점 함수가 받는 객체에는 소비자 전용 생성자 인자(`client_kwargs`)가 없다. workflow가 그 인자에 기대면
+     (예: 스트리밍 usage) 진입점 함수가 같은 값을 다시 얹는다(`model.model_copy(update=...)`).
+   - async 전용 workflow는 동기 호출(invoke·stream·batch)이 `unsupported`로 나온다 — workflow의 사실이다. 이때 `WF FAIL`(종료코드 1)이 나오므로 출력된 호출 방식별 결과로 async 쪽이 `ok`인지 본다.
+   - `ok`는 그 호출 방식이 예외 없이 끝났다는 뜻이다. 응답 내용이 맞는지는 판정하지 않는다(workflow 자체 테스트·서버 확인의 몫).
+3. 모델 실측 기록 후 `probe.status`가 `ok`인지 확인한다.
 4. workflow 자체 테스트와 서버 기동 확인을 함께 실행한다.

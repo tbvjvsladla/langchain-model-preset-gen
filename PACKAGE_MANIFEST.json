@@ -23,21 +23,21 @@
     },
     {
       "path": "README.md",
-      "bytes": 19787,
+      "bytes": 20542,
       "mode": "0644",
-      "sha256": "ca12862bd907c12459087767af06311929dabb95580291ea050da2748f714516"
+      "sha256": "541d2d13b45a90dd34a18db881447f2d1d1d0be098ab6ca9d0049ffdfd2c9dbb"
     },
     {
       "path": "SKILL.md",
-      "bytes": 9076,
+      "bytes": 9365,
       "mode": "0644",
-      "sha256": "130a5673b9ad025291340b190d77f683b9556e00b3f0167ff1817e8461f1c71d"
+      "sha256": "125fa89b737273d33c376aaadf0cb95ea7b2ba3084077edd8b64fe4675a76997"
     },
     {
       "path": "configs/config.example.yaml",
-      "bytes": 1430,
+      "bytes": 1438,
       "mode": "0644",
-      "sha256": "a4033848a0e1bacc781691aff4fbfb3cbde4b8a3100f0cc5d8564e0db3b1c5c4"
+      "sha256": "e3a5345752a2e697469f73e2eb4f3516e333754faa2c2aa9bb7bde71bf047061"
     },
     {
       "path": "data/embedding_capability.yaml",
@@ -59,9 +59,9 @@
     },
     {
       "path": "data/provider_classes.yaml",
-      "bytes": 7047,
+      "bytes": 7559,
       "mode": "0644",
-      "sha256": "ea548cfe5061a2c085e7c201af54177f5fd4fd8fd2f6d2ace095a90fc55234d1"
+      "sha256": "5acdcaeebb57390105740b3db71e4afa92ae5791686fa952e8d2fe2922458944"
     },
     {
       "path": "data/providers.yaml",
@@ -113,21 +113,21 @@
     },
     {
       "path": "langchain_model_preset_gen/preflight.py",
-      "bytes": 22029,
+      "bytes": 23685,
       "mode": "0644",
-      "sha256": "d7af861a13f8a4369550c546622348da9d7dd6b3a6255b7b308f941993cfa592"
+      "sha256": "fd5f22f92e705ced046edea49317b7e08b8f114a9acbf90e9ceb671ea83ae2c9"
     },
     {
       "path": "langchain_model_preset_gen/probe_graph.py",
-      "bytes": 22548,
+      "bytes": 22737,
       "mode": "0644",
-      "sha256": "aaacbe94d0d06a2ac3e8c78641b012e5313d79b962c7113cbc31722f645cfb84"
+      "sha256": "798171d3a11e6a225d9a50d97a3143c975eaa0fe72430de8a0573792675169eb"
     },
     {
       "path": "langchain_model_preset_gen/probe_runnable.py",
-      "bytes": 6229,
+      "bytes": 8285,
       "mode": "0644",
-      "sha256": "99007947244eabd0c7f3ffa5eeaa667f9576f9f5ad49ff34428c9222bb811b0f"
+      "sha256": "9ce547fdc83ff6eb859e56dabce6481bb8fad858daa679e1a7e269d82b27e673"
     },
     {
       "path": "langchain_model_preset_gen/publish.py",
@@ -137,15 +137,15 @@
     },
     {
       "path": "langchain_model_preset_gen/resolver.py",
-      "bytes": 14995,
+      "bytes": 17751,
       "mode": "0644",
-      "sha256": "908bfd5a1beb917d7c4795b9d70410adc876f2a712996ec95ca013707e360d05"
+      "sha256": "c4386b0c762760f946a3feaa40863361808283915705d08aff23af37786ca2a4"
     },
     {
       "path": "langchain_model_preset_gen/settings.py",
-      "bytes": 4758,
+      "bytes": 5353,
       "mode": "0644",
-      "sha256": "7d91bba8dfe524b26999bf6ca4b786c48d5221f75e141ac27d86c7bc937d1d37"
+      "sha256": "3b50a3f5f5e89fe948a9a2312e5902b806fa81b362f703ee310f74d834c9da2d"
     },
     {
       "path": "langchain_model_preset_gen/workflow_probe.py",
@@ -545,9 +545,9 @@
     },
     {
       "path": "references/correction-standard.md",
-      "bytes": 7008,
+      "bytes": 8691,
       "mode": "0644",
-      "sha256": "d6fc7e6c881afaed39c1c57308a47e58889b843beb444437c54b937788ae909d"
+      "sha256": "02f4ca825f1ba043f65975933bc1082089b386a15f4105289554dbebb00cac15"
     },
     {
       "path": "references/env-setup.md",
@@ -653,21 +653,21 @@
     },
     {
       "path": "tests/test_preflight.py",
-      "bytes": 19301,
+      "bytes": 19287,
       "mode": "0644",
-      "sha256": "2214cc2b6100505074892ea8892684a85e4864379958b0b9654f560fa0a123db"
+      "sha256": "d30583f8e71aaf27c46e8fb5f38cdc31828fd393383e8055a2ceb5a71dbc9151"
     },
     {
       "path": "tests/test_probe_graph.py",
-      "bytes": 45291,
+      "bytes": 45665,
       "mode": "0644",
-      "sha256": "f8f879f85ef66660e1247ef0223ef04ff5faaaea817250cb3adaa603d0a74545"
+      "sha256": "6bb7e1fe5cfa78ab95ac47dd48dc1f0c040cd66318b806432e3ab9a320a29f03"
     },
     {
       "path": "tests/test_probe_runnable.py",
-      "bytes": 7594,
+      "bytes": 9940,
       "mode": "0644",
-      "sha256": "e9cc987c3fc1aee0aa398c4308fd14ab11ab129b724fdfca5dde5330567164ef"
+      "sha256": "384948b83132cf59facaeda6398f6abf15e60fee982f54d5423221967368b852"
     },
     {
       "path": "tests/test_publish.py",
@@ -677,21 +677,21 @@
     },
     {
       "path": "tests/test_resolver.py",
-      "bytes": 16440,
+      "bytes": 20282,
       "mode": "0644",
-      "sha256": "c721b306e3064a2fe7ad3d95e17fb761104e507d0de7172bbe4e2ec77bae6a02"
+      "sha256": "3aa0f541efff24a8a6222a86270fae08288ede5b6e1c8d7a5b399a42bb624ae8"
     },
     {
       "path": "tests/test_settings.py",
-      "bytes": 6390,
+      "bytes": 7220,
       "mode": "0644",
-      "sha256": "7179c6b7ba9cd4c585807f7e94d2a358683ac6ae1178e171a27d0704497379a5"
+      "sha256": "e32f143095c916143c2edf3a81bfba9f30b071465bea0b54782c8666bbc9f290"
     },
     {
       "path": "tests/test_workflow_probe.py",
-      "bytes": 3269,
+      "bytes": 4985,
       "mode": "0644",
-      "sha256": "f1f9fb2acfe1a7b866aedb3e6996f50dcb60b82159ab386b47a693b98a109a18"
+      "sha256": "32dacd75cfa2ed1d83cb2d280ea7fc54c9d7ddd3d8a01cfaffd8ce6ce2f335bc"
     }
   ]
 }

@@ -72,18 +72,26 @@ def env_files(env_dir: Path) -> list[Path]:
     return [p for p in candidates if p.is_file()]
 
 
+def _checked_key(name: str, value: str, source: str) -> str:
+    """키 값에 공백·제어문자가 있으면 거부한다(CRLF 키 파일·escape 된 개행 등). 값은 메시지에 싣지 않는다 —
+    그런 값은 HTTP 헤더 예외 메시지에 원문으로 실려 출력에 새기 때문이다."""
+    if any(ch.isspace() or not ch.isprintable() for ch in value):
+        raise ValueError(f"API 키 {name} 값에 공백·제어문자가 있다 ({source}) — 키 값을 고친다")
+    return value
+
+
 def resolve_api_key(name: str | None, env_dir: Path, environ: Mapping[str, str] | None = None) -> str | None:
     """api_key_env 이름 → 키 값. name=None(무인증 자체 호스팅) → None."""
     if name is None:
         return None
     environ = os.environ if environ is None else environ
     if environ.get(name):
-        return environ[name]
+        return _checked_key(name, environ[name], "프로세스 환경변수")
     found: dict[Path, str] = {}
     for path in env_files(env_dir):
         value = dotenv_values(path).get(name)
         if value:
-            found[path] = value
+            found[path] = _checked_key(name, value, str(path))
     if len(set(found.values())) > 1:
         raise ValueError(f"{name} 값이 키 파일마다 다르다: {[str(p) for p in found]} — 하나로 맞춘다")
     if not found:

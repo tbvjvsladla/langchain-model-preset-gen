@@ -175,9 +175,9 @@ def _write_profile(skill, model="granite-4.2-8b", sp="site_vllm", kind="llm", pr
 
 def test_resolver_load_chat_model_passes_kwargs_and_no_auth_placeholder(skill, sdk_mock):
     SDK = sdk_mock("langchain_openai.ChatOpenAI")
-    load_chat_model(_write_profile(skill), {"effort": "high"}, skill_dir=skill, client_kwargs={"stream_usage": True})
+    load_chat_model(_write_profile(skill), {"effort": "high"}, skill_dir=skill)
     kw = SDK.call_args.kwargs
-    assert kw["api_key"] == rs.NO_AUTH_API_KEY and kw["stream_usage"] is True
+    assert kw["api_key"] == rs.NO_AUTH_API_KEY
     assert kw["base_url"] == SITE_BASE_URL and kw["extra_body"]["chat_template_kwargs"] == {"enable_thinking": True}
 
 
@@ -353,3 +353,82 @@ def test_resolver_load_embeddings_builds_wrapper(skill, sdk_mock, no_env_keys):
 def test_resolver_spec_is_deterministic(mk):
     prof = mk()
     assert resolve(copy.deepcopy(prof)) == resolve(copy.deepcopy(prof))
+
+
+# ── 적대 리뷰 보강: overridable ⊆ 어휘 / client_kwargs 를 SDK 필드 단위로 잠금 ────────────────
+
+def test_resolver_llm_overridable_outside_vocabulary_rejected(mk):
+    prof = mk()
+    prof["overridable"].append("seed")                       # 손 편집 — 해석기가 SDK 로 보내지 않는 키
+    with pytest.raises(ValueError, match="overridable"):
+        resolve(prof, {"seed": 7})
+    with pytest.raises(ValueError, match="overridable"):
+        resolve(prof)                                        # override 가 없어도 프로필 자체가 거부된다
+
+
+@pytest.mark.parametrize("key", ["dimensions", "temperature"])
+def test_resolver_embedding_overridable_outside_vocabulary_rejected(mk_emb, key):
+    prof = mk_emb()
+    prof["overridable"].append(key)
+    with pytest.raises(ValueError, match="overridable"):
+        resolve(prof)
+
+
+def _fake_openai_module(monkeypatch):
+    """ChatOpenAI 의 필드·alias 를 흉내 낸 pydantic 클래스(langchain-openai 1.3.x 실측 형태)."""
+    import sys
+    import types
+
+    from pydantic import BaseModel, ConfigDict, Field
+
+    class FakeChatOpenAI(BaseModel):
+        model_config = ConfigDict(populate_by_name=True)
+        model_name: str = Field(alias="model")
+        openai_api_key: str | None = Field(None, alias="api_key")
+        openai_api_base: str | None = Field(None, alias="base_url")
+        request_timeout: float | None = Field(None, alias="timeout")
+        max_tokens: int | None = Field(None, alias="max_completion_tokens")
+        max_retries: int | None = None
+        temperature: float | None = None
+        top_p: float | None = None
+        extra_body: dict | None = None
+        reasoning_effort: str | None = None
+        stream_usage: bool = False
+        model_kwargs: dict = Field(default_factory=dict)
+
+    fake = types.ModuleType("langchain_openai")
+    fake.ChatOpenAI = FakeChatOpenAI
+    monkeypatch.setitem(sys.modules, "langchain_openai", fake)
+    return FakeChatOpenAI
+
+
+def test_resolver_client_kwargs_sdk_field_passes(skill, monkeypatch):
+    _fake_openai_module(monkeypatch)
+    model = load_chat_model(_write_profile(skill), skill_dir=skill, client_kwargs={"stream_usage": True})
+    assert model.stream_usage is True and model.max_tokens is not None
+
+
+@pytest.mark.parametrize("extra", [{"max_completion_tokens": 7}, {"request_timeout": 1.0},
+                                   {"openai_api_key": "OTHER"}, {"model_name": "other"},
+                                   {"model_kwargs": {"reasoning": {"effort": "high"}}}])
+def test_resolver_client_kwargs_alias_or_model_kwargs_locked(skill, monkeypatch, extra):
+    _fake_openai_module(monkeypatch)
+    with pytest.raises(LockedKeyError, match="client_kwargs"):
+        load_chat_model(_write_profile(skill), skill_dir=skill, client_kwargs=extra)
+
+
+def test_resolver_client_kwargs_unknown_name_rejected(skill, monkeypatch):
+    _fake_openai_module(monkeypatch)                         # SDK 가 모르는 이름은 model_kwargs 로 흘러 프로필을 우회한다
+    with pytest.raises(ValueError, match="SDK 필드"):
+        load_chat_model(_write_profile(skill), skill_dir=skill, client_kwargs={"verbosity_x": "high"})
+
+
+@pytest.mark.parametrize("model,sp,field", [
+    ("granite-4.2-8b", "site_vllm", "reasoning"), ("granite-4.2-8b", "site_vllm", "use_responses_api"),
+    ("gpt-5.4-mini", "openai", "reasoning"), ("claude-sonnet-5", "anthropic", "thinking"),
+    ("claude-sonnet-5", "anthropic", "output_config"), ("gemini-3.6-flash", "google", "thinking_budget"),
+    ("gemini-3.6-flash", "google", "include_thoughts"),
+])
+def test_resolver_reasoning_axis_sdk_fields_reserved(mk, model, sp, field):
+    """추론 축을 바꾸는 SDK 필드는 주입 경로에 없어도 프로필이 관리한다(sdk.chat_locked_kwargs)."""
+    assert field in resolve(mk(model, sp))["reserved_kwargs"]

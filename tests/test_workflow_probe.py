@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import datetime as dt
+
 import pytest
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage
@@ -62,7 +64,7 @@ def test_workflow_probe_configured_null_is_none(skill):
     assert wp.configured_factory(skill) is None
 
 
-def test_workflow_probe_preflight_runs_six_modes_through_workflow(tmp_path, monkeypatch):
+def test_workflow_probe_check_runs_six_modes_through_workflow(tmp_path, monkeypatch):
     proj = tmp_path / "proj"
     skill = make_skill(proj, workflow_probe="wp_mod_chain:make")
     _module(proj, "wp_mod_chain", "from langchain_core.runnables import RunnableLambda\n"
@@ -70,6 +72,37 @@ def test_workflow_probe_preflight_runs_six_modes_through_workflow(tmp_path, monk
     fake = GenericFakeChatModel(messages=iter([AIMessage(content="ok")] * 12))
     monkeypatch.setattr(rs, "build_chat_model", lambda spec, key, client_kwargs=None: fake)
     spec = rs.resolve(pb.build_llm_profile("granite-4.2-8b", "RAG", "site_vllm", skill))
-    out = p.check_runnable(spec, None, DATA, wp.configured_factory(skill))
+    out = p.check_workflow(spec, None, DATA, wp.configured_factory(skill))
     assert out["status"] == "ok" and out["target"] == "RunnableSequence"
     assert list(out["runnable"]) == ["invoke", "ainvoke", "stream", "astream", "batch", "abatch"]
+
+
+def test_workflow_probe_runnable_check_ignores_workflow(tmp_path, monkeypatch):
+    """runnable 은 해석기 객체 그대로 — workflow_probe 가 설정돼도 프로필 probe 기록 대상은 모델이다."""
+    proj = tmp_path / "proj"
+    skill = make_skill(proj, workflow_probe="wp_mod_broken:make")
+    _module(proj, "wp_mod_broken", "def make(model):\n    raise AssertionError('runnable 이 workflow 를 부르면 안 된다')\n")
+    fake = GenericFakeChatModel(messages=iter([AIMessage(content="ok")] * 12))
+    monkeypatch.setattr(rs, "build_chat_model", lambda spec, key, client_kwargs=None: fake)
+    spec = rs.resolve(pb.build_llm_profile("granite-4.2-8b", "RAG", "site_vllm", skill))
+    out = p.check_runnable(spec, None, DATA)
+    assert out["status"] == "ok" and out["target"] == "GenericFakeChatModel"
+
+
+def _write_granite(skill):
+    path = skill.parents[2] / "profiles" / "g.yaml"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(pb.render_yaml(pb.build_llm_profile("granite-4.2-8b", "RAG", "site_vllm", skill),
+                                   dt.date(2026, 10, 15)), encoding="utf-8")
+    return path
+
+
+def test_workflow_probe_check_requires_configured_factory(skill):
+    with pytest.raises(ValueError, match="workflow_probe"):
+        p.preflight(_write_granite(skill), ["workflow"], skill_dir=skill)
+
+
+def test_workflow_probe_check_never_written_back(skill):
+    """workflow 결과는 그 workflow 의 사실이다 — 프로필 probe(모델·플랫폼 사실)에 기록하지 않는다."""
+    with pytest.raises(ValueError, match="write-back"):
+        p.preflight(_write_granite(skill), ["workflow"], write_back_flag=True, skill_dir=skill)

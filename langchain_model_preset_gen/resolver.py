@@ -20,6 +20,8 @@ import importlib
 from collections.abc import Mapping
 from pathlib import Path
 
+from pydantic import AliasChoices
+
 from . import catalog
 from . import injection as inj
 from . import settings
@@ -42,6 +44,8 @@ EMBEDDING_DIMENSIONS_KEY = "dimensions"
 # api_key_env null = 무인증 자체 호스팅의 선언. LangChain 생성자는 키 문자열을 요구해 자리표시 문자열을 넣는다.
 NO_AUTH_API_KEY = "not-needed"
 MODEL_KWARG = "model"
+# SDK 가 생성자 밖 요청 본문 인자를 받는 통로 — 프로필이 관리하는 인자를 우회할 수 있어 client_kwargs 로 받지 않는다.
+MODEL_KWARGS_FIELD = "model_kwargs"
 URL_PATH_SEP = "/"
 
 
@@ -55,6 +59,13 @@ def read_profile(profile: str | Path | Mapping) -> tuple[dict, str]:
         return dict(profile), str(profile["model_name"])
     path = Path(profile)
     return catalog.load_yaml(path), path.name
+
+
+def check_overridable(overridable: list, allowed, name: str) -> None:
+    """프로필 overridable ⊆ 그 kind 의 어휘. 밖의 키는 해석기가 SDK 로 보내지 않아 `sent` 에만 남는 무효 knob 이 된다."""
+    outside = sorted(set(overridable) - set(allowed))
+    if outside:
+        raise ValueError(f"프로필 {name} 의 overridable 에 어휘 밖 키 {outside} — 허용: {list(allowed)}")
 
 
 def check_override(override: Mapping, overridable: list, name: str) -> None:
@@ -114,6 +125,7 @@ def _resolve_llm(body: dict, override: dict, data: dict, name: str) -> dict:
                                            f"프로필 {name} reasoning_effort")
     catalog.validate_sampling(body["sampling"], vocab, f"프로필 {name}")
     overridable = list(body["overridable"])
+    check_overridable(overridable, LLM_OVERRIDABLE, name)
     check_override(override, overridable, name)
 
     preset_values, limits = body["preset_values"], body["limits"]
@@ -144,7 +156,8 @@ def _resolve_llm(body: dict, override: dict, data: dict, name: str) -> dict:
     if sdk["base_url_kwarg"] is not None:
         kwargs[sdk["base_url_kwarg"]] = body["base_url"]
     reserved = (_top_segments(sdk["kwarg_paths"].values()) | _top_segments(_injection_paths(data["injection"]))
-                | {MODEL_KWARG, sdk["api_key_kwarg"]} | ({sdk["base_url_kwarg"]} - {None}))
+                | set(sdk["chat_locked_kwargs"])
+                | {MODEL_KWARG, MODEL_KWARGS_FIELD, sdk["api_key_kwarg"]} | ({sdk["base_url_kwarg"]} - {None}))
     return {
         "kind": KIND_LLM,
         "name": name,
@@ -188,6 +201,7 @@ def _resolve_embedding(body: dict, override: dict, data: dict, name: str) -> dic
         raise ValueError(f"실효 차원 {effective_dim} ≠ probe.measured_at_dimensions {measured} — 실측이 낡았다. "
                          f"preflight runnable 재실측 필요 — 프로필 {name}")
     overridable = list(body["overridable"])
+    check_overridable(overridable, EMBEDDING_OVERRIDABLE, name)
     check_override(override, overridable, name)
     pc = body["provider_class"]
     sdk = data["provider_classes"][pc]["sdk"]
@@ -205,7 +219,7 @@ def _resolve_embedding(body: dict, override: dict, data: dict, name: str) -> dic
     if sdk["base_url_kwarg"] is not None:
         kwargs[sdk["base_url_kwarg"]] = body["base_url"]
     reserved = (_top_segments(paths.values()) | set(sdk["embedding_fixed_kwargs"])
-                | {MODEL_KWARG, sdk["api_key_kwarg"]} | ({sdk["base_url_kwarg"]} - {None}))
+                | {MODEL_KWARG, MODEL_KWARGS_FIELD, sdk["api_key_kwarg"]} | ({sdk["base_url_kwarg"]} - {None}))
     surface = supports["query_mode_surface"]
     return {
         "kind": KIND_EMBEDDING,
@@ -250,16 +264,49 @@ def constructor_kwargs(spec: dict, api_key: str | None, client_kwargs: Mapping |
     return kwargs
 
 
+def _field_of(sdk_class) -> dict[str, str]:
+    """pydantic SDK 클래스의 생성자 인자 이름(필드명·alias·validation_alias) → 필드명.
+    LangChain 생성자는 필드명과 alias 를 둘 다 받는다(예: ChatOpenAI max_completion_tokens → max_tokens)."""
+    names: dict[str, str] = {}
+    for field, info in sdk_class.model_fields.items():
+        names[field] = field
+        for alias in (info.alias, info.validation_alias):
+            choices = alias.choices if isinstance(alias, AliasChoices) else [alias]
+            names.update({choice: field for choice in choices if isinstance(choice, str)})
+    return names
+
+
+def check_client_fields(sdk_class, spec: dict, client_kwargs: Mapping | None) -> None:
+    """client_kwargs 를 SDK 필드 단위로 검사한다. 이름 단위 잠금(constructor_kwargs)은 alias 로 우회할 수 있다.
+      · 프로필이 관리하는 필드와 같은 필드 → LockedKeyError
+      · SDK 필드가 아닌 이름 → ValueError (LangChain 은 모르는 이름을 model_kwargs 로 옮겨 요청 본문에 싣는다)"""
+    extra = dict(client_kwargs or {})
+    if not extra:
+        return
+    field_of = _field_of(sdk_class)
+    unknown = sorted(set(extra) - set(field_of))
+    if unknown:
+        raise ValueError(f"client_kwargs {unknown} 는 {spec['sdk_class']} 의 SDK 필드가 아니다 (프로필 {spec['name']})")
+    locked = {field_of.get(name, name) for name in spec["reserved_kwargs"]}
+    clash = sorted(name for name in extra if field_of[name] in locked)
+    if clash:
+        raise LockedKeyError(f"client_kwargs {clash} 는 프로필이 관리하는 인자(alias 포함)다 — override 로 바꾼다 "
+                             f"(프로필 {spec['name']})")
+
+
 def build_chat_model(spec: dict, api_key: str | None, client_kwargs: Mapping | None = None):
-    kwargs = constructor_kwargs(spec, api_key, client_kwargs)      # 잠금 검사가 SDK import 보다 먼저다
-    return import_class(spec["sdk_class"])(**kwargs)
+    kwargs = constructor_kwargs(spec, api_key, client_kwargs)      # 이름 단위 잠금 검사가 SDK import 보다 먼저다
+    sdk_class = import_class(spec["sdk_class"])
+    check_client_fields(sdk_class, spec, client_kwargs)
+    return sdk_class(**kwargs)
 
 
 def build_embeddings(spec: dict, api_key: str | None, query_instruction: str | None = None,
                      client_kwargs: Mapping | None = None) -> ProfileEmbeddings:
     kwargs = constructor_kwargs(spec, api_key, client_kwargs)
-    return ProfileEmbeddings(import_class(spec["sdk_class"])(**kwargs), spec["supports"], spec["mechanism"],
-                             query_instruction)
+    sdk_class = import_class(spec["sdk_class"])
+    check_client_fields(sdk_class, spec, client_kwargs)
+    return ProfileEmbeddings(sdk_class(**kwargs), spec["supports"], spec["mechanism"], query_instruction)
 
 
 def _api_key(spec: dict, skill_dir: Path) -> str | None:

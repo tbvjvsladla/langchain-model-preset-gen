@@ -82,6 +82,7 @@ presets/ (용도)  +  model_rules/ (모델별 6칸·샘플링 수용표)  +  con
    cd .claude/skills/langchain-model-preset-gen
    cp configs/config.example.yaml configs/config.yaml
    ```
+   스킬 폴더의 `.gitignore`가 `configs/config.yaml`·`*.env`를 제외합니다(배포본에 설치자 값이 섞이지 않게). 설치 프로젝트가 git으로 사이트 설정을 관리한다면 처음 한 번 `git add -f configs/config.yaml`로 추가합니다(키 파일은 추가하지 않습니다).
 3. 의존성을 설치합니다. uv를 전제하지 않습니다(venv·conda·pip·docker 모두 가능 — [references/env-setup.md](references/env-setup.md)).
    ```bash
    pip install -r requirements.txt                    # langchain-core · langgraph · python-dotenv
@@ -117,7 +118,7 @@ workflow_probe: null               # 선택 — "패키지.모듈:함수"
 | `env_file_path` | API 키 `*.env` 파일이 있는 폴더입니다. |
 | `providers` | 사이트 전용 엔드포인트입니다. 각 항목은 `provider_class`·`base_url`·`api_key_env` 세 키를 가집니다. 공식 이름(`openai` 등)을 다시 쓰면 거부합니다. |
 | `overridable` | 여기 적힌 키만 Agent가 override할 수 있고, 목록에서 뺀 키는 잠깁니다. 값이 null이 아니면 발행 때 preset 값 대신 그 값이 프로필에 들어갑니다. 쓸 수 있는 키는 `temperature·top_p·top_k·effort·timeout_seconds·max_retries·response_deadline_seconds·max_tokens`입니다. 자세한 운영은 [references/override-guide.md](references/override-guide.md). |
-| `workflow_probe` | 설치자의 workflow를 실측 대상으로 씁니다. 형식은 `"패키지.모듈:함수"`이고, 함수는 해석기가 만든 객체 하나(LLM이면 ChatModel, 임베딩이면 Embeddings)를 받아 실측 대상을 돌려줍니다. LLM은 문자열 입력을 받는 `Runnable`, 임베딩은 embed 4종 메서드를 가진 객체여야 합니다. null이면 해석기 객체를 직접 실측합니다. |
+| `workflow_probe` | 설치자의 workflow를 실측 대상으로 씁니다. 형식은 `"패키지.모듈:함수"`이고, 함수는 해석기가 만든 객체 하나(LLM이면 ChatModel, 임베딩이면 Embeddings)를 받아 실측 대상을 돌려줍니다. LLM은 문자열 입력을 받는 `Runnable`, 임베딩은 embed 4종 메서드를 가진 객체여야 합니다. `preflight --checks workflow`가 이 대상으로 호출 방식을 돌리고 결과는 출력만 합니다(프로필에 기록하지 않음). null이면 `workflow` 검사를 쓸 수 없습니다. |
 
 - 상대경로는 **프로젝트 루트** 기준입니다. 프로젝트 루트 = 스킬 폴더에서 세 단계 위(`<root>/.claude/skills/langchain-model-preset-gen` → `<root>`). 다른 깊이에 설치했다면 절대경로를 씁니다.
 - 키가 빠지면 `KeyError`, 모르는 키가 있으면 `ValueError`로 멈춥니다(오타가 조용히 무시되지 않게).
@@ -191,7 +192,8 @@ emb = load_embeddings("envs/agents/qwen_qwen3-embedding-8b_RETRIEVAL_openrouter.
 | `v3` | 미니 호출 1회 — 200 OK / 401·403 키 불량 / 402·429 잔액·쿼터 |
 | `v4-1` | 정적 스키마 (API 0회) — 키 순서, provider 표와의 일치, 6칸·sampling·probe 블록 형태 |
 | `pg` | 끄기·켜기 상태 그래프 (LLM 전용, 원문 HTTP) |
-| `runnable` | 해석기 객체(또는 `workflow_probe` 대상)로 LLM 6종 / 임베딩 4종 + 노름·차원 |
+| `runnable` | 해석기 객체 그대로 LLM 6종 / 임베딩 4종 + 노름·차원 — 프로필 `probe`에 기록되는 결과 |
+| `workflow` | `workflow_probe` 대상으로 같은 호출 방식 — 교정 후 확인용, 기록하지 않음(`--write-back`과 함께 쓸 수 없음) |
 
 **실측 그래프(`pg`)** 는 LangGraph로 만든 결정론 상태 그래프입니다.
 
@@ -205,7 +207,7 @@ connect(모델 목록) → off_gate → off_probe(none 칸 주입) → on_path(�
 - "사고함" = provider별 사고 텍스트 길이 또는 사고 토큰 수가 0보다 큼.
 - 샘플링은 그 effort 단계에서 `accepted`로 선언된 키만 보내고 4xx 여부만 판정합니다.
 - 노드당 1회 호출로 판정하고, 전이표(`data/probe_graph.yaml`)에 없는 결과는 즉시 멈춥니다. 429·5xx·전송 실패는 `U_undeterminable`(모델 사실 아님)입니다.
-- `--write-back`은 LLM에서 `pg`와 `runnable`이 모두 필요하고, **pg PASS 그리고 6종 전부 ok**일 때만 `probe.status: ok`를 씁니다. 임베딩은 `runnable`만 필요하며 노름에서 `supports.normalization`(≈1 → builtin, 아니면 required)을 함께 기록합니다. 프로필의 나머지 내용·주석은 바이트 그대로 둡니다.
+- `--write-back`은 LLM에서 `pg`와 `runnable`이 모두 필요하고, **pg PASS 그리고 6종 전부 ok**일 때만 `probe.status: ok`를 씁니다. 임베딩은 `runnable`만 필요하고 **`embed_query`·`embed_documents`가 ok이고 probe_error가 없을 때** ok를 쓰며(async 2종의 unsupported만 허용), 노름에서 `supports.normalization`(≈1 → builtin, 아니면 required)을 함께 기록합니다. 프로필의 나머지 내용·주석은 바이트 그대로 둡니다.
 - `probe.status: forced`는 실측이 쓰지 않습니다. 사용자가 강행을 결정했을 때만 손으로 적는 값입니다.
 - `probe.py` 종료코드: 0 = PASS, 10 = probe_error(결과 — stdout JSON), 그 밖 = 도구 실패.
 

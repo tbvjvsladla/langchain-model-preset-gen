@@ -19,6 +19,8 @@
 #     embedding_kwarg_paths   : 임베딩 프로필 키(limits·dimensions) → 생성자 인자 경로.
 #     embedding_fixed_kwargs  : 임베딩 생성자에 항상 싣는 인자.
 #     embedding_unsupported_kwargs : 임베딩 SDK 에 없는 프로필 키 — 발행 시 overridable 에서 빠진다(효과 없는 knob 방지).
+#     chat_locked_kwargs : 주입 경로·kwarg_paths 밖이지만 추론 축(effort)·호출 API 를 바꾸는 chat 생성자 필드.
+#                          client_kwargs 로 받지 않는다(실측한 인자와 workflow 인자가 갈라진다).
 #
 # 근거 문서
 #   OpenAI    https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create
@@ -49,6 +51,7 @@ openai_compatible:
     base_url_kwarg: base_url
     kwarg_paths: {max_tokens: max_tokens, timeout_seconds: timeout, max_retries: max_retries,
                   temperature: temperature, top_p: top_p, top_k: extra_body.top_k}
+    chat_locked_kwargs: [reasoning, use_responses_api]
     embedding_kwarg_paths: {dimensions: dimensions, timeout_seconds: timeout, max_retries: max_retries}
     # 없으면 LangChain 이 문자열 대신 tiktoken 토큰 ID 배열을 보내 호환 서버가 거부한다(실측).
     embedding_fixed_kwargs: {tiktoken_enabled: false, check_embedding_ctx_length: false}
@@ -77,6 +80,7 @@ openai:
     base_url_kwarg: null
     kwarg_paths: {max_tokens: max_tokens, timeout_seconds: timeout, max_retries: max_retries,
                   temperature: temperature, top_p: top_p, top_k: extra_body.top_k}
+    chat_locked_kwargs: [reasoning, use_responses_api]
     embedding_kwarg_paths: {dimensions: dimensions, timeout_seconds: timeout, max_retries: max_retries}
     embedding_fixed_kwargs: {}
     embedding_unsupported_kwargs: []
@@ -108,6 +112,7 @@ anthropic:
     base_url_kwarg: null
     kwarg_paths: {max_tokens: max_tokens, timeout_seconds: timeout, max_retries: max_retries,
                   temperature: temperature, top_p: top_p, top_k: top_k}
+    chat_locked_kwargs: [thinking, effort, output_config]
     # 임베딩 API 없음 — embedding_class 가 없어 임베딩 프로필 해석은 KeyError.
 
 google:
@@ -138,6 +143,7 @@ google:
     base_url_kwarg: null
     kwarg_paths: {max_tokens: max_output_tokens, timeout_seconds: timeout, max_retries: max_retries,
                   temperature: temperature, top_p: top_p, top_k: top_k}
+    chat_locked_kwargs: [thinking_budget, thinking_level, thinking_config, include_thoughts]
     embedding_kwarg_paths: {dimensions: output_dimensionality, timeout_seconds: request_options.timeout}
     embedding_fixed_kwargs: {}
     embedding_unsupported_kwargs: [max_retries]   # GoogleGenerativeAIEmbeddings 에 max_retries 필드가 없다

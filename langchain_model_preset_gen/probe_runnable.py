@@ -1,7 +1,8 @@
-"""probe_runnable — 해석기가 만든 객체(또는 workflow_probe 가 감싼 Runnable)로 LangChain 호출 방식을 실제로 돌린다.
+"""probe_runnable — 해석기가 만든 객체(또는 workflow_probe 가 감싼 대상)로 LangChain 호출 방식을 실제로 돌린다.
 
 LLM   : invoke · ainvoke · stream · astream · batch · abatch      → status ok ⇔ 6종 전부 ok (unsupported 도 ok 가 아니다)
-임베딩 : embed_query · embed_documents · aembed_query · aembed_documents → probe_error 가 하나라도 있으면 probe_error
+임베딩 : embed_query · embed_documents · aembed_query · aembed_documents → status ok ⇔ embed_query·embed_documents 가
+         ok 이고 probe_error 가 없다(async 2종의 unsupported 만 허용)
          + embed_query 가 ok 면 정규화 전 raw 벡터(`inner`)의 노름·차원을 잰다(normalization 파생 원자료).
 
 결과 어휘: ok(실제로 돌았다) / unsupported(provider 가 명시적으로 거부 — 모델 사실) / probe_error(하네스가 확증 못 함).
@@ -12,6 +13,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 import time
 
 logger = logging.getLogger("langchain_model_preset_gen.probe_runnable")
@@ -20,25 +22,41 @@ RUNNABLE_OK = "ok"
 RUNNABLE_UNSUPPORTED = "unsupported"
 PROBE_OK = "ok"
 PROBE_ERROR = "probe_error"
+# 임베딩 핵심 경로 — 인덱스 빌드(embed_documents)·질의(embed_query, 노름 실측 원자료). LangChain Embeddings 의 추상
+# 메서드라 unsupported 일 수 없다. async 2종은 기본 구현이 executor 위임이라 unsupported 를 허용한다.
+EMBED_CORE_METHODS = ("embed_query", "embed_documents")
 
 SMOKE_RETRIES = 2                   # 일시적 실패(429·네트워크) 재시도 횟수
 SMOKE_BACKOFF_START_SECONDS = 1.0
 SMOKE_BACKOFF_FACTOR = 2
 MSG_HEAD_CHARS = 160
 
+# HTTP status 로 판정되는 실패 — 모델 사실이 아니다 → probe_error. 예외의 status_code 속성을 먼저 본다.
+#   401·403 = 인증·권한(키 문제) · 404 = 모델·엔드포인트 부재 · 408·429 = 시간 초과·쿼터 · 5xx = 서버 장애
+_NOT_MODEL_FACT_STATUS = frozenset({401, 403, 404, 408, 429})
+_SERVER_ERROR_STATUS_MIN = 500
+# 메시지 안의 HTTP 코드는 단어 경계로만 본다(request id `req_4290ab` 의 429 는 rate limit 이 아니다).
+_NOT_MODEL_FACT_CODE_RE = re.compile(r"\b(401|403|404|408|429|5\d\d)\b")
 # 일시적 실패(하네스·네트워크·쿼터) — 모델 사실이 아니다 → probe_error.
 _TRANSIENT_MARKERS = (
-    "429", "rate limit", "ratelimit", "quota", "overloaded", "timeout", "timed out",
-    "connection", "temporarily", "500", "502", "503", "504", "unavailable",
+    "rate limit", "ratelimit", "quota", "overloaded", "timeout", "timed out",
+    "connection", "temporarily", "unavailable",
 )
-# 출력 상한 소진 — 사고 모델이 상한을 사고에 다 쓰면 400 invalid_request_error 가 온다 → 예산 문제(probe_error).
-_BUDGET_MARKERS = ("max_tokens or model output limit was reached",)
-# 모델·엔드포인트 부재(404) — 호출 방식 미지원이 아니다 → probe_error. unsupported 표지보다 먼저 본다.
-_MISSING_MARKERS = ("model_not_found", "does not exist", "notfounderror", "not_found", "404")
+# 인증·권한 — OpenAI 401 본문의 type 은 invalid_request_error 라서 unsupported 표지보다 먼저 본다 → probe_error.
+_AUTH_MARKERS = ("authentication", "api key", "api_key", "unauthorized", "permission", "forbidden")
+# 출력·입력 상한 소진 — 사고 모델이 상한을 사고에 다 쓰면, 또는 입력이 컨텍스트를 넘으면 400 invalid_request_error 가
+# 온다 → 예산 문제(probe_error).
+_BUDGET_MARKERS = ("max_tokens or model output limit was reached", "context length", "context_length", "maximum context")
+# 모델·엔드포인트 부재 — 호출 방식 미지원이 아니다 → probe_error. unsupported 표지보다 먼저 본다.
+_MISSING_MARKERS = ("model_not_found", "does not exist", "notfounderror", "not_found")
 # provider 가 그 호출·인자를 명시적으로 거부 — 이것만 모델 사실(unsupported).
+# async 전용 대상의 동기 호출 거부 문구(대상의 사실):
+#   "no synchronous function provided"            = LangGraph 노드(RunnableCallable)
+#   "cannot invoke a coroutine function synchronously" = LangChain RunnableLambda(afunc 만)
 _UNSUPPORTED_MARKERS = (
     "not support", "not supported", "unsupported", "notimplemented", "not implemented",
-    "does not support", "unrecognized", "unknown parameter", "invalid_request",
+    "does not support", "unrecognized", "unknown parameter", "invalid_request", "no synchronous function provided",
+    "cannot invoke a coroutine function synchronously",
 )
 
 # raw 노름 → normalization 파생 허용오차. builtin 실측치 1.0000, required 실측치 4.9~17.4 를 넉넉히 가른다.
@@ -50,10 +68,15 @@ NORMALIZATION_REQUIRED = "required"
 
 def classify_exception(exc: BaseException) -> str:
     """예외 → unsupported | probe_error. 모르는 실패는 probe_error(모델 사실로 단정하지 않는다)."""
+    status = getattr(exc, "status_code", None)        # openai·anthropic APIStatusError — 없는 예외가 대부분이다
+    if status in _NOT_MODEL_FACT_STATUS or (isinstance(status, int) and status >= _SERVER_ERROR_STATUS_MIN):
+        return PROBE_ERROR
     if isinstance(exc, NotImplementedError):
         return RUNNABLE_UNSUPPORTED
     msg = f"{type(exc).__name__}: {exc}".lower()
-    for markers in (_TRANSIENT_MARKERS, _BUDGET_MARKERS, _MISSING_MARKERS):
+    if _NOT_MODEL_FACT_CODE_RE.search(msg):
+        return PROBE_ERROR
+    for markers in (_TRANSIENT_MARKERS, _AUTH_MARKERS, _BUDGET_MARKERS, _MISSING_MARKERS):
         if any(m in msg for m in markers):
             return PROBE_ERROR
     if any(m in msg for m in _UNSUPPORTED_MARKERS):
@@ -112,7 +135,8 @@ def check_runnable(target, methods: list[str], prompt: str, *, embedding: bool) 
     """호출 방식 전부 실측 → {runnable, status}."""
     runnable = {m: smoke_one(target, method=m, prompt=prompt) for m in methods}
     if embedding:
-        status = PROBE_ERROR if PROBE_ERROR in runnable.values() else PROBE_OK
+        core_ok = all(runnable[m] == RUNNABLE_OK for m in EMBED_CORE_METHODS)
+        status = PROBE_OK if core_ok and PROBE_ERROR not in runnable.values() else PROBE_ERROR
     else:
         status = PROBE_OK if all(v == RUNNABLE_OK for v in runnable.values()) else PROBE_ERROR
     return {"runnable": runnable, "status": status}

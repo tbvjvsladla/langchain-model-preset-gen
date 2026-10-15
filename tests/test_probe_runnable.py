@@ -71,6 +71,7 @@ class RecordingEmb:
      "unsupported"),
     (Exception("Error code: 404 - {'message': 'The model `x` does not exist', 'type': 'invalid_request_error', "
                "'code': 'model_not_found'}"), "probe_error"),
+    (TypeError('No synchronous function provided to "retrieve".'), "unsupported"),   # async 전용 Runnable — 사실
 ])
 def test_probe_runnable_verdict_classification(exc, verdict):
     assert pr.classify_exception(exc) == verdict
@@ -165,3 +166,41 @@ def test_probe_runnable_embedding_measures_raw_inner_norm(skill, monkeypatch):
     out = p.check_runnable(spec, "k", DATA)
     assert out["status"] == "ok" and out["norm_measured"] == 5.0, "노름은 정규화 전 raw 벡터"
     assert out["target"] == "ProfileEmbeddings"
+
+
+# ── 적대 리뷰 보강: 인증·컨텍스트 초과·status_code·단어 경계 / 임베딩 핵심 경로 ─────────────────
+
+class _StatusError(Exception):
+    def __init__(self, msg, status_code):
+        super().__init__(msg)
+        self.status_code = status_code
+
+
+@pytest.mark.parametrize("exc,verdict", [
+    # OpenAI 401 은 type 이 invalid_request_error 다 — 키 문제는 모델 사실(unsupported)이 아니다
+    (Exception("Error code: 401 - {'error': {'message': 'Incorrect API key provided', 'type': 'invalid_request_error'}}"),
+     "probe_error"),
+    (_StatusError("Unsupported something", 401), "probe_error"),
+    (_StatusError("forbidden", 403), "probe_error"),
+    (_StatusError("slow down", 429), "probe_error"),
+    (_StatusError("upstream", 503), "probe_error"),
+    (Exception("Error code: 400 - {'message': \"This model's maximum context length is 8192 tokens\", "
+               "'type': 'invalid_request_error', 'code': 'context_length_exceeded'}"), "probe_error"),
+    # 숫자 표지는 단어 경계로만 — request id 안의 429 는 rate limit 이 아니다
+    (Exception("Unsupported parameter: top_p (request id req_4290ab)"), "unsupported"),
+    # LangChain RunnableLambda(afunc 만) 의 동기 호출 거부 — async 전용 대상의 사실
+    (NotImplementedError("Cannot invoke a coroutine function synchronously.Use `ainvoke` instead."), "unsupported"),
+    (TypeError("Cannot invoke a coroutine function synchronously.Use `ainvoke` instead."), "unsupported"),
+])
+def test_probe_runnable_verdict_classification_hardened(exc, verdict):
+    assert pr.classify_exception(exc) == verdict
+
+
+@pytest.mark.parametrize("fail", [
+    {m: NotImplementedError() for m in EMB_METHODS},                      # 4종 전부 unsupported
+    {"embed_documents": NotImplementedError()},                          # 인덱스 빌드 경로
+    {"embed_query": NotImplementedError()},                              # 질의 경로 + 노름 실측 원자료
+])
+def test_probe_runnable_embed_core_sync_methods_must_be_ok(fail):
+    emb = RecordingEmb(fail=fail)
+    assert pr.check_runnable(emb, EMB_METHODS, "hi", embedding=True)["status"] == "probe_error"

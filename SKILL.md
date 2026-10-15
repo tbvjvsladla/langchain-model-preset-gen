@@ -62,12 +62,12 @@ python $S/scripts/preflight.py --profile <프로필> --checks v1,v3,v4-1,pg,runn
 python $S/scripts/preflight.py --profile <프로필> --checks v1,v3,v4-1,runnable --write-back      # 임베딩 (pg는 LLM 전용)
 ```
 - 종료코드 0 = FAIL 없음. v1 WARN(목록에 없음)은 FAIL이 아니지만 pg connect가 `T_model_missing`으로 끝난다 — model_name부터 확인한다.
-- `configs/config.yaml` `workflow_probe`가 설정돼 있으면 runnable은 그 workflow를 통해 돈다(LLM·임베딩 같은 함수).
+- `runnable`은 해석기 객체를 실측하고 그 결과만 기록한다. 기존 workflow 교정 후에는 `--checks workflow`(configs `workflow_probe` 필요, 기록하지 않음)로 workflow를 통한 호출을 확인한다.
 - 검사가 예외로 멈추면 파일에 쓰지 않는다. 예외 메시지를 그대로 사용자에게 보고한다.
 
 | probe.status | 의미 | 할 일 |
 |---|---|---|
-| `ok` | LLM: pg 종착 PASS **그리고** runnable 6종 전부 `ok`(`unsupported`도 ok가 아니다). 임베딩: runnable에 `probe_error` 없음 | 등록 가능 |
+| `ok` | LLM: pg 종착 PASS **그리고** runnable 6종 전부 `ok`(`unsupported`도 ok가 아니다). 임베딩: `embed_query`·`embed_documents`가 `ok`이고 `probe_error` 없음 | 등록 가능 |
 | `probe_error` + method `static`·`static_v5` | 미측정 | 위 명령으로 실측 |
 | `probe_error` + method `probe_graph_live`·`live_v5` | 실측 실패 | 종착 진단을 사용자에게 보고 |
 | `forced` | 사용자가 "강행"이라고 **명시**한 경우에만 네가 손으로 `probe.status: forced`로 고친다 | 강행 사유·시점을 보고에 남긴다. 다음 write-back이 덮어쓴다 |
@@ -96,6 +96,7 @@ pg 종착(`probe.terminal`) → 교정 후보 (자동 수정 없음 — 교정�
   ```bash
   python $S/scripts/probe.py --profile <프로필> --override '{"effort": "high"}'
   ```
+  이 실측이 검증하는 override는 effort·sampling이다. limits override(`max_tokens` 등)는 모델 출력 한도 안의 값인지 직접 확인한다.
 - Agent 코드는 `load_chat_model(profile, override)` / `load_embeddings(profile, override, query_instruction=...)`로 객체를 만든다.
   `query_mode_surface: instruct_prefix` 임베딩은 `query_instruction`이 없으면 로드가 거부된다.
 
