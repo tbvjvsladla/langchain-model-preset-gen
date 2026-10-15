@@ -73,7 +73,7 @@ def test_config_example_matches_contract():
     body = yaml.safe_load((PKG_ROOT / "configs" / "config.example.yaml").read_text(encoding="utf-8"))
     assert list(body) == list(st.CONFIG_KEYS)
     assert set(body["overridable"]) == set(st.OVERRIDABLE_VOCABULARY)
-    assert not (PKG_ROOT / "configs" / "config.yaml").exists(), "배포본에 설치자 config.yaml 을 싣지 않는다"
+    # 배포본에 config.yaml 이 없다는 것은 배포 검사(레이아웃) 몫이다 — 설치본에는 config.yaml 이 정당하게 있다.
 
 
 # ── *.env 색인 ───────────────────────────────────────────────────────────

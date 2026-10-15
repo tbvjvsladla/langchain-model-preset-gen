@@ -683,9 +683,9 @@
     },
     {
       "path": "tests/test_settings.py",
-      "bytes": 6365,
+      "bytes": 6390,
       "mode": "0644",
-      "sha256": "418b0f6bae2d874d04726eeae74643d56223c2b89f2d2ddc35ff8a1645bcff3b"
+      "sha256": "7179c6b7ba9cd4c585807f7e94d2a358683ac6ae1178e171a27d0704497379a5"
     },
     {
       "path": "tests/test_workflow_probe.py",
